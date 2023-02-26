@@ -85,4 +85,3 @@ def Start_Game(gameState):
 if __name__ == '__main__':
     gameState = State()
     Start_Game(gameState)
-# print(stockfish.is_fen_valid("3NR3/n3kN2/1pQ1P1B1/1P4P1/P1p5/8/5P2/R3K3 b Q - 3 48")) example of checkmate returns fen is invalid or false
