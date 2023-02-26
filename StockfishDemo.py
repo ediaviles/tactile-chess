@@ -36,7 +36,7 @@ def Get_Move_From_User(stockfish: Stockfish):
     while True:
         move = input("Enter your move:\n")
         if stockfish.is_move_correct(move):
-            Make_Moves([move])
+            Make_Moves([move], stockfish)
             break;
         else:
             print("Move is invalid, please try again!")
