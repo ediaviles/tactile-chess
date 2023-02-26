@@ -23,5 +23,13 @@ class MyTestCase(unittest.TestCase):
         StockfishDemo.Make_Moves(moves, stockfish)
         assert(stockfish.get_fen_position() == expectedFen)
 
+    def test_Stalemate_Detection(selfself):
+        '''
+        Test for when fen is in stalemate state
+        '''
+        gameState = StockfishDemo.State()
+        gameState.fen = "3q4/1K6/8/8/r7/8/8/2r5 w - - 0 1"
+        assert(StockfishDemo.Start_Game(gameState) == -1)
+
 if __name__ == '__main__':
     unittest.main()
