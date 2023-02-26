@@ -24,6 +24,9 @@ class State:
         self.fen = newFen
         self.lastMove = lastMove
 
+def Make_Moves(moves, stockfish: Stockfish):
+    stockfish.make_moves_from_current_position(moves)
+
 def Get_Move_From_User(stockfish: Stockfish):
     '''
     Function to wait for, validate, and apply user input
@@ -33,7 +36,7 @@ def Get_Move_From_User(stockfish: Stockfish):
     while True:
         move = input("Enter your move:\n")
         if stockfish.is_move_correct(move):
-            stockfish.make_moves_from_current_position([move])
+            Make_Moves([move])
             break;
         else:
             print("Move is invalid, please try again!")
@@ -68,18 +71,18 @@ def handleGameState(turn, stockfish: Stockfish):
         turn = 1
     return turn, stockfish.get_fen_position(), move # return new turn and update fen
 
-def Start_Game():
+def Start_Game(gameState):
     '''
     Start_Game()
     Function used to start a game of chess
     :return:
     '''
-    gameState = State()
     while (gameState.stockfish.is_fen_valid(gameState.fen)):     # while our board is still valid - no stalemates, no checkmates, etc.
         newTurn, newFen, lastMove = handleGameState(gameState.turn, gameState.stockfish)
         gameState.updateGameState(newTurn, newFen, lastMove)
     return -1
 
-
-Start_Game()
+if __name__ == '__main__':
+    gameState = State()
+    Start_Game(gameState)
 # print(stockfish.is_fen_valid("3NR3/n3kN2/1pQ1P1B1/1P4P1/P1p5/8/5P2/R3K3 b Q - 3 48")) example of checkmate returns fen is invalid or false
