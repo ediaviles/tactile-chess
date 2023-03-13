@@ -54,10 +54,10 @@ def AI_Make_Move(stockfish: Stockfish):
     stockfish.make_moves_from_current_position([move])
     return move
 
-def handleGameState(turn, stockfish: Stockfish):
+def handleGameState(turn: int, stockfish: Stockfish):
     '''
     Function to handle game state changes
-    :param turn: integer value 0 or 1 representing current player's turn
+    :param turn: integer value 0 or 1 representing current player's turn USE FEN NOTATION TO FIGURE OUT TURN
     :param stockfish: Stockfish class representing current game being played
     :return: turn, newFen -> return current player's turn after move is made or not made, updated fen of new board state
     '''
@@ -71,7 +71,7 @@ def handleGameState(turn, stockfish: Stockfish):
         turn = 1
     return turn, stockfish.get_fen_position(), move # return new turn and update fen
 
-def Start_Game(gameState):
+def Start_Game(gameState: State):
     '''
     Start_Game()
     Function used to start a game of chess
