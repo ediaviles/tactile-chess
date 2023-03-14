@@ -1,0 +1,14 @@
+{
+  "name": "stockfish-scripts",
+  "version": "1.0.0",
+  "description": "Chess legality and board integrity checking using the stockfish API",
+  "main": "eventController.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chess.js": "^1.0.0-beta.3"
+  }
+}
