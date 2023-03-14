@@ -3,6 +3,7 @@ module_manager.review()
 from stockfish import Stockfish
 import chess
 import random
+import subprocess
 
 class State:
     '''
@@ -18,6 +19,7 @@ class State:
         # TODO add updating to last move made
         self.lastMove = ''
         self.fen = chess.Board().fen()
+        self.moves = "" #in order to keep consistentcy, store moves as string separated by spaces
 
     def updateGameState(self, newTurn, newFen, lastMove):
         self.turn = newTurn
@@ -65,6 +67,7 @@ def handleGameState(turn: int, stockfish: Stockfish):
         print(stockfish.get_board_visual())      # print current state of the board
         move = Get_Move_From_User(stockfish)     # request user move
         turn = 0
+
     else:
         move = AI_Make_Move(stockfish)
         print("Opponent made the following move: " + move)
@@ -84,4 +87,5 @@ def Start_Game(gameState: State):
 
 if __name__ == '__main__':
     gameState = State()
+    subprocess.Popen(["node", "services.js"])
     Start_Game(gameState)
