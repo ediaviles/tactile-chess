@@ -1,7 +1,8 @@
 //import {eventController} from "./eventController";
 //import {Chess} from "chess.js";
-const Chess = require('chess.js')
+/*const Chess = require('chess.js')*/
 //import Chess from "chess.js";
+const axios = require('axios')
 
 const headers = {
     Authorization: 'Bearer ' + 'lip_Zt6rLGHWhZj8qcaeTaLG'
@@ -39,19 +40,17 @@ const eventController = async (data) => {
         }
     }
 }
-const chess = new Chess();
+/*const chess = new Chess();
 let movesMadeArr = []
 let movesIndex = 0
-let fen = ''
+let fen = ''*/
 const fetchData = async (command, data) => {
     let response = null;
     switch (command) {
         case 'stream events': {
-            response = await fetch('https://lichess.org/api/stream/event', {
-                headers: headers,
-                method: 'GET',
-                mode: 'cors'
-            })
+            response = await axios.get('https://lichess.org/api/stream/event',
+                {headers: headers}
+            )
             break;
         }
         case 'game start': {
@@ -94,7 +93,7 @@ const fetchData = async (command, data) => {
             try {
                 const newData = JSON.parse(message);
                 console.log(newData)
-                if ("type" in newData && newData.type === "gameFull") {
+                /*if ("type" in newData && newData.type === "gameFull") {
                     //TODO if we see a gameFull update our liveState
                     //first get array of moves
                     const movesMade = newData.state.moves.split(" ");
@@ -123,7 +122,7 @@ const fetchData = async (command, data) => {
                     movesIndex = movesMade.length;
                     fen = chess.fen();
                 }
-                console.log(fen)
+                console.log(fen)*/
                 await eventController(newData)
             } catch (error) {
                 console.error(error);

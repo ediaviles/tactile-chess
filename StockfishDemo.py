@@ -63,6 +63,7 @@ def handleGameState(gameState: State):
         print(gameState.stockfish.get_board_visual())      # print current state of the board
         move = Get_Move_From_User(gameState)     # request user move
         turn = 0
+
     else:
         move = AI_Make_Move(gameState)
         print("Opponent made the following move: " + move)
