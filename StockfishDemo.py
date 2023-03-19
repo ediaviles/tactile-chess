@@ -70,14 +70,22 @@ def handleGameState(gameState: State):
         turn = 1
     return gameState.stockfish.get_fen_position() # return new turn and update fen
 
+def Pass_Move(gameState):
+    turn = gameState.fen.split(" ")[1]
+    if(turn == 'w'):
+        
+
+
 def Validate_State_Move(gameState: State):
     '''
     Start_Game()
     Function used to start a game of chess
     :return:
     '''
+    
     if (gameState.stockfish.is_fen_valid(gameState.fen)):     # while our board is still valid - no stalemates, no checkmates, etc.
-        handleGameState(gameState)
+        gameState.fen = handleGameState(gameState)
+        Pass_Move(gameState)
     else:
         print("Not a valid FEN")
     print(gameState.stockfish.get_board_visual()) 
