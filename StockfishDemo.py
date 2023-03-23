@@ -4,6 +4,7 @@ from stockfish import Stockfish
 import chess
 import random
 import argparse
+import sys
 
 class State:
     '''
@@ -25,17 +26,28 @@ class State:
 def Make_Moves(moves, gameState: State):
     gameState.stockfish.make_moves_from_current_position(moves)
 
-def Get_Move_From_User(gameState: State):
+def Get_Move_From_User(fen):
     '''
     Function to wait for, validate, and apply user input
     :param stockfish:
     :return:
     '''
-    move = gameState.move
-    if gameState.stockfish.is_move_correct(move):
-        Make_Moves([move], gameState)
-    else:
-        print("Move is invalid, please try again!")
+    #move = gameState.move
+    stockfish = Stockfish()
+    #move = "e2e4"
+    res = input('enter move here')
+    #if stockfish.is_fen_valid(fen):
+    #    stockfish.set_fen_position(fen)
+    #    move = input("Enter move: ")
+    #if gameState.stockfish.is_move_correct(move):
+    #    Make_Moves([move], gameState)
+    #    while (not stockfish.is_move_correct(move)):
+    #        input("Please enter new move: ")
+    #else: return -1
+    #stockfish.make_moves_from_current_position([move])
+    #return move
+    print('Hello ' + res)
+    #return [move, stockfish.fen]
 
 def AI_Make_Move(gameState: State):
     '''
@@ -72,9 +84,9 @@ def handleGameState(gameState: State):
 
 def Pass_Move(gameState):
     turn = gameState.fen.split(" ")[1]
-    if(turn == 'w'): #send the move
-        j
-    elif(turn == 'b'): #wait for move -> move to next state, player's turn
+    if(turn == 'w'):
+        return
+    return
 
         
 
@@ -93,7 +105,7 @@ def Validate_State_Move(gameState: State):
         print("Not a valid FEN")
     print(gameState.stockfish.get_board_visual()) 
     return -1
-
+'''
 if __name__ == '__main__':
     #TODO: Make the arguments required
     parser = argparse.ArgumentParser(description='Validate Board State and Move Made')
@@ -103,9 +115,23 @@ if __name__ == '__main__':
                         help='Current FEN state of game')
 
     args = parser.parse_args()
-    move = args.move
-    fen = args.fen
+    print(args)
+    #move = args.move
+    #fen = args.fen
+    #gameState = State(fen, move)
+    #Validate_State_Move(gameState)
+'''
+
+def test():
+    name = input('enter name: ')
+    print('Hi, ' + name)
 
 
-    gameState = State(fen, move)
-    Validate_State_Move(gameState)
+#if sys.argv[1] == 'Get_Move_From_User':
+#    Get_Move_From_User(sys.argv[2])
+
+#if sys.argv[1] == 'test':
+    #test()
+ #   print("penis")
+
+print(sys.argv[1])
