@@ -70,9 +70,9 @@ const makeMove = (gameId, move) => {
         })
 }
 
-//createAISeek()
-
-/*const pyScript = spawn('python3', ['StockfishDemo.py']);*/
+createAISeek()
+module.exports = makeMove
+//const pyScript = spawn('python3', ['StockfishDemo.py', 'test']);
 
 /*pyScript.stdin.on('ready', () => {*/
 /*    console.log('ready')*/
@@ -89,28 +89,28 @@ pyScript.stderr.on('data', (data) => {
 
 pyScript.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
-});*/
+}); */
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-})
-
-function ask(question) {
-    rl.question(question, (answer) => {
-        if(answer === "q") {
-            process.exit(1)
-        }
-        rl.write(`The answer received:  ${answer}\n`)
-        const pyScript = spawn('python3', ['StockfishDemo.py', answer])
-        pyScript.stdout.on('data', (data) => {
-             console.log(`stdout: ${data}`)
-        })
-        rl.close()
-    })
-}
-
-ask('what is your move?')
+//const rl = readline.createInterface({
+//    input: process.stdin,
+//    output: process.stdout,
+//})
+//
+//function ask(question) {
+//    rl.question(question, (answer) => {
+//        if(answer === "q") {
+//            process.exit(1)
+//        }
+//        rl.write(`The answer received:  ${answer}\n`)
+//        const pyScript = spawn('python3', ['StockfishDemo.py', 'test', answer])
+//        pyScript.stdout.on('data', (data) => {
+//             console.log(`stdout: ${data}`)
+//        })
+//        rl.close()
+//    })
+//}
+//
+//ask('what is your move?')
 
 
 

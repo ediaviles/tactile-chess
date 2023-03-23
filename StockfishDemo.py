@@ -25,29 +25,23 @@ class State:
 
 def Make_Moves(moves, gameState: State):
     gameState.stockfish.make_moves_from_current_position(moves)
+    return gameState.stockfish.get_fen_position()
 
-def Get_Move_From_User(fen):
+
+def Check_User_Move(gameState):
     '''
     Function to wait for, validate, and apply user input
     :param stockfish:
     :return:
     '''
-    #move = gameState.move
-    stockfish = Stockfish()
-    #move = "e2e4"
-    res = input('enter move here')
-    #if stockfish.is_fen_valid(fen):
-    #    stockfish.set_fen_position(fen)
-    #    move = input("Enter move: ")
-    #if gameState.stockfish.is_move_correct(move):
-    #    Make_Moves([move], gameState)
-    #    while (not stockfish.is_move_correct(move)):
-    #        input("Please enter new move: ")
-    #else: return -1
-    #stockfish.make_moves_from_current_position([move])
-    #return move
-    print('Hello ' + res)
-    #return [move, stockfish.fen]
+    move = gameState.move
+    if gameState.stockfish.is_move_correct(move):
+        return Make_Moves([move], gameState)
+        #print(gameState.stockfish.get_fen_position())
+        # return gameState.stockfish.get_fen_position()
+    else:
+        print("Move is invalid, please try again!")
+        return -1
 
 def AI_Make_Move(gameState: State):
     '''
@@ -61,32 +55,31 @@ def AI_Make_Move(gameState: State):
     gameState.stockfish.make_moves_from_current_position([move])
     return move
 
-def handleGameState(gameState: State):
-    '''
-    Function to handle game state changes
+# def handleGameState(gameState: State):
+#     '''
+#     Function to handle game state changes
 
-    :param turn: integer value 0 or 1 representing current player's turn 
-    :param stockfish: Stockfish class representing current game being played
+#     :param turn: integer value 0 or 1 representing current player's turn 
+#     :param stockfish: Stockfish class representing current game being played
 
-    :return: turn, newFen -> return current player's turn after move is made or not made, updated fen of new board state
-    '''
-    turn = gameState.fen.split(" ")[1]
-    if turn == 'w':
-        print(gameState.stockfish.get_board_visual())      # print current state of the board
-        move = Get_Move_From_User(gameState)     # request user move
-        turn = 0
+#     :return: turn, newFen -> return current player's turn after move is made or not made, updated fen of new board state
+#     '''
+#     # turn = gameState.fen.split(" ")[1]
+#     # if turn == 'w':
+#         #print(gameState.stockfish.get_board_visual())      # print current state of the board
+#     move = Check_User_Move(gameState)     # request user move
 
-    else:
-        move = AI_Make_Move(gameState)
-        print("Opponent made the following move: " + move)
-        turn = 1
-    return gameState.stockfish.get_fen_position() # return new turn and update fen
+#     # else:
+#     #     move = AI_Make_Move(gameState)
+#     #     print("Opponent made the following move: " + move)
+#         # turn = 1
+#     return gameState.stockfish.get_fen_position() # return new turn and update fen
 
-def Pass_Move(gameState):
-    turn = gameState.fen.split(" ")[1]
-    if(turn == 'w'):
-        return
-    return
+# def Pass_Move(gameState):
+#     turn = gameState.fen.split(" ")[1]
+#     if(turn == 'w'):
+#         return
+#     return
 
         
 
@@ -99,39 +92,48 @@ def Validate_State_Move(gameState: State):
     '''
     
     if (gameState.stockfish.is_fen_valid(gameState.fen)):     # while our board is still valid - no stalemates, no checkmates, etc.
-        gameState.fen = handleGameState(gameState)
-        Pass_Move(gameState)
+        gameState.fen = Check_User_Move(gameState)
+        return gameState.fen
+        # Pass_Move(gameState)
+        #return error code
     else:
         print("Not a valid FEN")
-    print(gameState.stockfish.get_board_visual()) 
-    return -1
-'''
+        return -1
+    #print(gameState.stockfish.get_board_visual()) 
+    
+
 if __name__ == '__main__':
     #TODO: Make the arguments required
     parser = argparse.ArgumentParser(description='Validate Board State and Move Made')
-    parser.add_argument('-move', metavar='M', type=str, nargs='?',
+    parser.add_argument('-move', metavar='M', type=str, nargs='?', required=True,
                         help='A move made by the user/opponent')
-    parser.add_argument('-fen', metavar='F', type=str, nargs='?',
+    parser.add_argument('-fen', metavar='F', type=str, nargs='?', required=True,
                         help='Current FEN state of game')
+    parser.add_argument('-update', metavar='U', type=bool, default=False, nargs='?',
+                        help='Just update the given FEN')
 
     args = parser.parse_args()
-    print(args)
-    #move = args.move
-    #fen = args.fen
-    #gameState = State(fen, move)
-    #Validate_State_Move(gameState)
-'''
+    move = args.move
+    fen = args.fen
+    update = args.update
+    #print(move, fen, type(update))
+    #print(fen)
+    gameState = State(fen, move)
+    result = '-1'
+    if(update):
+        result = Make_Moves([move], gameState)
+        print(result)
+        # exit(1)
+    else:
+        result = Validate_State_Move(gameState)
+        print(result)
+        # exit(0)
+    
 
-def test():
-    name = input('enter name: ')
-    print('Hi, ' + name)
 
 
 #if sys.argv[1] == 'Get_Move_From_User':
 #    Get_Move_From_User(sys.argv[2])
 
-#if sys.argv[1] == 'test':
-    #test()
- #   print("penis")
 
-print(sys.argv[1])
+#print(sys.argv[1])

@@ -8,29 +8,79 @@ const axios = require('axios')
 const {spawnSync, spawn} = require('child_process')
 const ndjson = require('ndjson')
 const EventEmitter = require('events')
+const readline = require('readline');
+const makeMove = require('./services')
 
 const headers = {
     Authorization: 'Bearer ' + 'lip_Zt6rLGHWhZj8qcaeTaLG'
 };
 
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+})
+
+async function ask(question) {
+    rl.question(question, (answer) => {
+        if(answer === "q") {
+            process.exit(1)
+        }
+        rl.write(`The answer received:  ${answer}\n`)
+        console.log('this is the game fen before move: '+gameState.fen)
+        console.log('this is the move to be played: ' + answer)
+        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', answer])
+        pythonProcess.stdout.on('data', (data) => {
+            console.log('stdout: ' + data)
+            if (data !== '-1' && data !== gameState.fen) {
+                gameState.fen = data
+                gameState.moves.push(answer)
+                fetch(`https://lichess.org/api/board/game/${gameState.gameId}/move/${answer}`,
+                {
+                    headers: headers,
+                    method: 'POST',
+                    mode: 'cors'
+                })
+            }
+        });
+        pythonProcess.on('close', (code) => {
+            console.log('child process exited user move')
+        })
+    })
+}
+
+
 const eventController = async (data) => {
     switch(data.type) {
         case 'gameStart': {
-            
             // once a game is started we want to open a new event stream to listen for chess moves being made
             //TODO
             gameState.gameId = data.game.fullId
             gameState.fen = data.game.fen
-            gameState.turn = data.game.color
+            gameState.moves = []
             fetchData('stream game', {gameId: gameState.gameId})
-            const pythonProcess = spawn('python3', ['StockfishDemo.py', 'Get_Move_From_User', gameState.fen])
-            pythonProcess.stdout.on('data', (data) => {
-                console.log(`Python output: ${data}`);
-            });
-            pythonProcess.on('close', (code) => {
-                console.log('child process exited')
-            })
+            await ask('what is your move?')
             break;
+        }
+        case 'gameState': {
+            let moves = data.moves
+            if (moves !== '') {
+                moves = moves.split(' ')
+                lastMove = moves[moves.length - 1]
+                if (!gameState.moves.includes(lastMove)) {
+                    const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', lastMove, '-update', 'True'])
+                    pythonProcess.stdout.on('data', (data) => {
+                        console.log('stdout: '+ data)
+                        if (data !== '-1' && data !== gameState.fen) {
+                            gameState.fen = data
+                        }
+                    })
+                    pythonProcess.on('close', (code) => {
+                        console.log('child process exited opponent move')
+                        ask('what is your move?')
+                    }); 
+                }
+            }
+            break
         }
         case 'gameFinish': {
             // once a game is finished we close all streams and redirect user to home page
@@ -40,7 +90,7 @@ const eventController = async (data) => {
         case 'makeMove': {
             const gameId = data.gameId
             const move = data.move
-            await fetch(`https://lichess.org/api/board/game/${gameId}/move/${move}`,
+            fetch(`https://lichess.org/api/board/game/${gameId}/move/${move}`,
                 {headers: headers,
                 method: 'POST',
                 mode: 'cors'})
@@ -63,7 +113,7 @@ let gameId = null*/
 
 let gameState = {
     fen: null,
-    turn: null,
+    moves: null,
     gameId: null
 }
 const fetchData = async (command, props) => {
