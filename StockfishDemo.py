@@ -72,7 +72,10 @@ def handleGameState(gameState: State):
 
 def Pass_Move(gameState):
     turn = gameState.fen.split(" ")[1]
-    if(turn == 'w'):
+    if(turn == 'w'): #send the move
+        j
+    elif(turn == 'b'): #wait for move -> move to next state, player's turn
+
         
 
 
