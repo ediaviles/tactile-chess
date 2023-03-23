@@ -1,5 +1,9 @@
 const fetchData = require('./ndJSONReader.js')
 const axios = require('axios')
+const {spawnSync, spawn} = require('child_process')
+const readline = require('readline');
+
+
 const headers = {
     Authorization: 'Bearer ' + 'lip_Zt6rLGHWhZj8qcaeTaLG'
 };
@@ -12,6 +16,7 @@ const formData = (data) => {
 
 const createAISeek = () => {
     //First start a stream
+    console.log("In createAISeek")
     const data = {
         level: 1,
         'clock.limit': 60 * 3,
@@ -65,4 +70,47 @@ const makeMove = (gameId, move) => {
         })
 }
 
-createAISeek()
+//createAISeek()
+
+/*const pyScript = spawn('python3', ['StockfishDemo.py']);*/
+
+/*pyScript.stdin.on('ready', () => {*/
+/*    console.log('ready')*/
+/*})*/
+/*
+pyScript.stdout.on('data', (data) => {
+    console.log(`stdout: ${data}`);
+});
+
+pyScript.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+});
+
+
+pyScript.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+});*/
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+})
+
+function ask(question) {
+    rl.question(question, (answer) => {
+        if(answer === "q") {
+            process.exit(1)
+        }
+        rl.write(`The answer received:  ${answer}\n`)
+        const pyScript = spawn('python3', ['StockfishDemo.py', answer])
+        pyScript.stdout.on('data', (data) => {
+             console.log(`stdout: ${data}`)
+        })
+        rl.close()
+    })
+}
+
+ask('what is your move?')
+
+
+

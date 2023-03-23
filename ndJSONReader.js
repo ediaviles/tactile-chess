@@ -1,8 +1,13 @@
 //import {eventController} from "./eventController";
 //import {Chess} from "chess.js";
-/*const Chess = require('chess.js')*/
+/*
+const Chess = require('chess.js')
+*/
 //import Chess from "chess.js";
 const axios = require('axios')
+const {spawnSync, spawn} = require('child_process')
+const ndjson = require('ndjson')
+const EventEmitter = require('events')
 
 const headers = {
     Authorization: 'Bearer ' + 'lip_Zt6rLGHWhZj8qcaeTaLG'
@@ -14,9 +19,17 @@ const eventController = async (data) => {
             
             // once a game is started we want to open a new event stream to listen for chess moves being made
             //TODO
-            let gid = data.game.fullId;
-            console.log(gid)
-            fetchData('stream game', {gameId: gid})
+            gameState.gameId = data.game.fullId
+            gameState.fen = data.game.fen
+            gameState.turn = data.game.color
+            fetchData('stream game', {gameId: gameState.gameId})
+            const pythonProcess = spawn('python3', ['StockfishDemo.py', 'Get_Move_From_User', gameState.fen])
+            pythonProcess.stdout.on('data', (data) => {
+                console.log(`Python output: ${data}`);
+            });
+            pythonProcess.on('close', (code) => {
+                console.log('child process exited')
+            })
             break;
         }
         case 'gameFinish': {
@@ -43,35 +56,79 @@ const eventController = async (data) => {
 /*const chess = new Chess();
 let movesMadeArr = []
 let movesIndex = 0
-let fen = ''*/
-const fetchData = async (command, data) => {
-    let response = null;
+let fen = ''*//*
+let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+let turn = 'w'
+let gameId = null*/
+
+let gameState = {
+    fen: null,
+    turn: null,
+    gameId: null
+}
+const fetchData = async (command, props) => {
+    const streamEmitter = new EventEmitter()
     switch (command) {
         case 'stream events': {
-            response = await axios.get('https://lichess.org/api/stream/event',
-                {headers: headers}
-            )
+            let response = axios.get('https://lichess.org/api/stream/event',
+                {responseType:"stream", headers: headers}
+            ).then((response)=>{
+                const stream = response.data.pipe(ndjson.parse());
+
+                // Listen for the 'data' event and emit it on the streamEmitter instance
+                stream.on('data', (data) => {
+                    streamEmitter.emit('data', data);
+                });
+
+                // Listen for the 'end' event and emit it on the streamEmitter instance
+                stream.on('end', () => {
+                    streamEmitter.emit('end');
+                });
+            }).catch((error) => {
+                    console.error(error);
+            });
             break;
         }
-        case 'game start': {
-            const gameId = data.gameId
+        /*case 'game start': {
+            gameId = data.gameId
             window.location.pathname = `/test/${gameId}`;
             break;
-        }
+        }*/
         case 'stream game': {
-            const gameId = data.gameId
-            response = await fetch(`https://lichess.org/api/board/game/stream/${gameId}`, {
-                headers: headers,
-                method: 'GET',
-                mode: 'cors'
-            })
+            //gameId = props.gameId
+            //console.log(gameState)
+            let response = await axios.get(`https://lichess.org/api/board/game/stream/${gameState.gameId}`, {responseType:"stream", headers: headers}
+            ).then((response)=>{
+                const stream = response.data.pipe(ndjson.parse());
+
+                // Listen for the 'data' event and emit it on the streamEmitter instance
+                stream.on('data', (data) => {
+                    streamEmitter.emit('data', data);
+                });
+
+                // Listen for the 'end' event and emit it on the streamEmitter instance
+                stream.on('end', () => {
+                    streamEmitter.emit('end');
+                });
+            }).catch((error) => {
+                console.error(error);
+            });
             break;
         }
 
         default:
             break;
     }
-    const reader = response.body.getReader();
+    streamEmitter.on('data', (data) => {
+        if (data.hasOwnProperty('type')) {
+            eventController(data, gameState)
+        }
+    });
+
+    streamEmitter.on('end', () => {
+        console.log('Stream ended');
+    });
+    /*const reader = response.body.getReader();
     let decoder = new TextDecoder('utf-8');
     let partialData = '';
     while (true) {
@@ -93,7 +150,13 @@ const fetchData = async (command, data) => {
             try {
                 const newData = JSON.parse(message);
                 console.log(newData)
-                /*if ("type" in newData && newData.type === "gameFull") {
+                //TODO if we already started a game
+                if (gameId !== null && turn === 'w') { // if we started a game and its users turn
+                    console.log("starting subprocess")
+                    const pythonProcess = spawnSync('python3', ['StockfishDemo.py', 'Get_Move_From_User', fen])
+                    console.log(pythonProcess)
+                }
+                /!*if ("type" in newData && newData.type === "gameFull") {
                     //TODO if we see a gameFull update our liveState
                     //first get array of moves
                     const movesMade = newData.state.moves.split(" ");
@@ -122,13 +185,13 @@ const fetchData = async (command, data) => {
                     movesIndex = movesMade.length;
                     fen = chess.fen();
                 }
-                console.log(fen)*/
+                console.log(fen)*!/
                 await eventController(newData)
             } catch (error) {
                 console.error(error);
-            }
+            }*//*
         }
-    }
+    }*/
 };
 
 module.exports = fetchData;
