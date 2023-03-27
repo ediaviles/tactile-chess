@@ -40,7 +40,6 @@ def Check_User_Move(gameState):
         #print(gameState.stockfish.get_fen_position())
         # return gameState.stockfish.get_fen_position()
     else:
-        print("Move is invalid, please try again!")
         return -1
 
 def AI_Make_Move(gameState: State):
@@ -119,7 +118,7 @@ if __name__ == '__main__':
     #print(move, fen, type(update))
     #print(fen)
     gameState = State(fen, move)
-    result = '-1'
+    result = "-1"
     if(update):
         result = Make_Moves([move], gameState)
         print(result)

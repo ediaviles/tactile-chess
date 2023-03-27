@@ -31,19 +31,23 @@ async function ask(question) {
         const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', answer])
         pythonProcess.stdout.on('data', (data) => {
             console.log('stdout: ' + data)
-            if (data !== '-1' && data !== gameState.fen) {
-                gameState.fen = data
+            const dataString = data.toString().trim()
+            if (dataString !== "-1" && dataString !== gameState.fen) {
+                gameState.fen = dataString
                 gameState.moves.push(answer)
-                fetch(`https://lichess.org/api/board/game/${gameState.gameId}/move/${answer}`,
+                axios.post(`https://lichess.org/api/board/game/${gameState.gameId}/move/${answer}`, {},
                 {
                     headers: headers,
                     method: 'POST',
                     mode: 'cors'
                 })
+            } else if(dataString === "-1") {
+                ask(question)
             }
         });
         pythonProcess.on('close', (code) => {
             console.log('child process exited user move')
+            console.log('waiting for opponent move...')
         })
     })
 }
@@ -70,8 +74,9 @@ const eventController = async (data) => {
                     const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', lastMove, '-update', 'True'])
                     pythonProcess.stdout.on('data', (data) => {
                         console.log('stdout: '+ data)
-                        if (data !== '-1' && data !== gameState.fen) {
-                            gameState.fen = data
+                        const dataString = data.toString().trim()
+                        if (dataString !== '-1' && dataString !== gameState.fen) {
+                            gameState.fen = dataString
                         }
                     })
                     pythonProcess.on('close', (code) => {
@@ -90,7 +95,7 @@ const eventController = async (data) => {
         case 'makeMove': {
             const gameId = data.gameId
             const move = data.move
-            fetch(`https://lichess.org/api/board/game/${gameId}/move/${move}`,
+            axios.post(`https://lichess.org/api/board/game/${gameId}/move/${move}`, {},
                 {headers: headers,
                 method: 'POST',
                 mode: 'cors'})
