@@ -47,7 +47,6 @@ async function ask(question) {
         });
         pythonProcess.on('close', (code) => {
             console.log('child process exited user move')
-            console.log('waiting for opponent move...')
         })
     })
 }
