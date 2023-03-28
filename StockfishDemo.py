@@ -5,6 +5,8 @@ import chess
 import random
 import argparse
 import sys
+import serial
+import time
 
 class State:
     '''
@@ -79,6 +81,19 @@ def AI_Make_Move(gameState: State):
 #     if(turn == 'w'):
 #         return
 #     return
+def Get_Move_From_Serial():
+    #establish arduino connection
+    arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.1)
+    while True:
+        time.sleep(0.05)
+        data = arduino.readline()
+        #case on data being valid or invalid
+        if data == '-1':
+            continue
+        else:
+            #make move with data
+            break
+
 
         
 
