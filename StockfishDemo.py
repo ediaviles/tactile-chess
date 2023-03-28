@@ -94,8 +94,30 @@ def Get_Move_From_Serial():
             #make move with data
             break
 
+def Find_Piece_From_GameState(gameState):
+    move, fen = gameState.move, gameState.fen
+    rowToIndex = {1: 7, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2, 7: 1, 8: 0}
+    colToIndex = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
+    entireFen = fen.split(" ")
+    boardFen = entireFen[0].split("/")
+    src, dst = move[:2], move[2:]
+    #get row from origin
+    c, r = src[0], int(src[1])
+    rowIndex = rowToIndex[r]
+    colIndex = colToIndex[c]
 
-        
+    piece = ''
+    curCol = 0
+    for s in boardFen[rowIndex]:
+        if s.isnumeric():
+            curCol += int(s)
+        elif curCol == colIndex:
+            piece = s
+            break
+        else:
+            curCol += 1
+    return piece
+
 
 
 def Validate_State_Move(gameState: State):
@@ -133,6 +155,7 @@ if __name__ == '__main__':
     #print(move, fen, type(update))
     #print(fen)
     gameState = State(fen, move)
+    #print(Find_Piece_From_GameState(gameState))
     result = "-1"
     if(update):
         result = Make_Moves([move], gameState)
