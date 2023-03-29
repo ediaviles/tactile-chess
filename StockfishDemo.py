@@ -176,7 +176,7 @@ if __name__ == '__main__':
         else:
             message = "The move " + move + " is invalid"
 
-    # subprocess.run(['python3', 'audio_module.py', '--text', message])
+    subprocess.run(['python3', 'audio_module.py', '--text', message])
     print(result)
         # exit(0)
     
