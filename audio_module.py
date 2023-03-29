@@ -1,10 +1,12 @@
 import module_manager
 module_manager.review()
 import pyttsx3
+import argparse
 
 class Text_to_Speech_Engine(object):
     def __init__(self):
         self.engine = pyttsx3.init(driverName='espeak')
+        # self.engine = pyttsx3.init()
         # Set the properties of the voice
         self.engine.setProperty('rate', 70)    # Speed in words per minute
         self.engine.setProperty('volume', 0.7)  # Volume between 0 and 1
@@ -23,7 +25,7 @@ if __name__ == '__main__':
     text_to_speech_engine = Text_to_Speech_Engine()
     
     # Vocalize the input string
-    parser = argparse.ArgumentParser(description='Validate Board State and Move Made')
+    parser = argparse.ArgumentParser(description='Vocalize Board State and Move Made')
     parser.add_argument('-text', metavar='M', type=str, nargs='?', required=True,
                         help='Text to be vocalized by the script')
 
