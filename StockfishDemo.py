@@ -7,6 +7,7 @@ import argparse
 import sys
 import serial
 import time
+import subprocess
 
 class State:
     '''
@@ -27,7 +28,8 @@ class State:
 
 def Make_Moves(moves, gameState: State):
     gameState.stockfish.make_moves_from_current_position(moves)
-    return gameState.stockfish.get_fen_position()
+    gameState.fen = gameState.stockfish.get_fen_position()
+    return gameState.fen
 
 
 def Check_User_Move(gameState):
@@ -102,7 +104,7 @@ def Find_Piece_From_GameState(gameState):
     boardFen = entireFen[0].split("/")
     src, dst = move[:2], move[2:]
     #get row from origin
-    c, r = src[0], int(src[1])
+    c, r = dst[0], int(dst[1])
     rowIndex = rowToIndex[r]
     colIndex = colToIndex[c]
 
@@ -138,6 +140,7 @@ def Validate_State_Move(gameState: State):
     #print(gameState.stockfish.get_board_visual()) 
     
 
+
 if __name__ == '__main__':
     #TODO: Make the arguments required
     parser = argparse.ArgumentParser(description='Validate Board State and Move Made')
@@ -159,11 +162,22 @@ if __name__ == '__main__':
     result = "-1"
     if(update):
         result = Make_Moves([move], gameState)
-        print(result)
+        
+        piece = Find_Piece_From_GameState(gameState)
+        message = piece + " " + move
+
         # exit(1)
     else:
         result = Validate_State_Move(gameState)
-        print(result)
+        if (result != "-1"):
+            piece = Find_Piece_From_GameState(gameState)
+            message = piece + " " + move
+
+        else:
+            message = "The move " + move + " is invalid"
+
+    # subprocess.run(['python3', 'audio_module.py', '--text', message])
+    print(result)
         # exit(0)
     
 
