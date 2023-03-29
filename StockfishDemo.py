@@ -17,7 +17,7 @@ class State:
     '''
     def __init__(self, fen: str, move: str):
         # self.turn = 1
-        self.stockfish = Stockfish()
+        self.stockfish = Stockfish(path="/usr/games/stockfish")
         # print(type(chess.Board().fen()))
         self.stockfish.set_fen_position(fen)
         # TODO add updating to last move made
