@@ -1,0 +1,88 @@
+const int DIGITAL_PIN_1 = 2;
+const int DIGITAL_PIN_2 = 3;
+const int DIGITAL_PIN_3 = 4;
+const int DIGITAL_PIN_4 = 5;
+const int DIGITAL_PIN_5 = 6;
+const int DIGITAL_PIN_6 = 7;
+const int DIGITAL_PIN_7 = 8;
+const int ANALOG_PIN = A0;
+
+int binaryCounter = 0;
+int groupCounter = 0;
+int matrix[8][8];
+int prevValues[8];
+
+void setup() {
+  pinMode(DIGITAL_PIN_1, OUTPUT);
+  pinMode(DIGITAL_PIN_2, OUTPUT);
+  pinMode(DIGITAL_PIN_3, OUTPUT);
+  pinMode(DIGITAL_PIN_4, OUTPUT);
+  pinMode(DIGITAL_PIN_5, OUTPUT);
+  pinMode(DIGITAL_PIN_6, OUTPUT);
+  pinMode(DIGITAL_PIN_7, OUTPUT);
+  pinMode(ANALOG_PIN, INPUT);
+  
+  // Keep digital pin 7 always high
+  digitalWrite(DIGITAL_PIN_7, HIGH);
+
+  for(int i = 0; i<8; i++){
+    prevValues[i] = -1;
+  }
+}
+
+
+
+void loop() {
+  // Count from 0 to 7 in binary
+  digitalWrite(DIGITAL_PIN_1, bitRead(binaryCounter, 0));
+  digitalWrite(DIGITAL_PIN_2, bitRead(binaryCounter, 1));
+  digitalWrite(DIGITAL_PIN_3, bitRead(binaryCounter, 2));
+  
+  
+  // Count from 0 to 7 in a group of 3
+  digitalWrite(DIGITAL_PIN_4, bitRead(groupCounter, 0));
+  digitalWrite(DIGITAL_PIN_5, bitRead(groupCounter, 1));
+  digitalWrite(DIGITAL_PIN_6, bitRead(groupCounter, 2));
+  
+  
+  // Save analog value to matrix when a digital pin changes output
+  if (digitalRead(DIGITAL_PIN_1) != bitRead(binaryCounter, 0) ||
+      digitalRead(DIGITAL_PIN_2) != bitRead(binaryCounter, 1) ||
+      digitalRead(DIGITAL_PIN_3) != bitRead(binaryCounter, 2) ||
+      digitalRead(DIGITAL_PIN_4) != bitRead(groupCounter, 0) ||
+      digitalRead(DIGITAL_PIN_5) != bitRead(groupCounter, 1) ||
+      digitalRead(DIGITAL_PIN_6) != bitRead(groupCounter, 2)) {
+    int currentValue = analogRead(ANALOG_PIN);
+    int digitalValue = (bitRead(binaryCounter, 0) << 0) |
+                       (bitRead(binaryCounter, 1) << 1) |
+                       (bitRead(binaryCounter, 2) << 2) |
+                       (bitRead(groupCounter, 0) << 3) |
+                       (bitRead(groupCounter, 1) << 4) |
+                       (bitRead(groupCounter, 2) << 5);
+    if (currentValue != prevValues[binaryCounter]){
+      matrix[binaryCounter][groupCounter] = currentValue;
+      prevValues[binaryCounter] = currentValue;
+      Serial.print("Digital values: ");
+      Serial.print(bitRead(binaryCounter, 0));
+      Serial.print(bitRead(binaryCounter, 1));
+      Serial.print(bitRead(binaryCounter, 2));
+      Serial.print(bitRead(groupCounter, 0));
+      Serial.print(bitRead(groupCounter, 1));
+      Serial.println(bitRead(groupCounter, 2));
+      
+     }
+  }
+  
+  // Increment counters
+  binaryCounter++;
+  if (binaryCounter == 8) {
+    binaryCounter = 0;
+    groupCounter++;
+    if (groupCounter == 8) {
+      binaryCounter = 0;
+    }
+  }
+  
+  // Wait for a short period before updating again
+  delay(50);
+}
