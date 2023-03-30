@@ -25,7 +25,7 @@ class State:
         self.lastMove = ''
         self.move = move
         self.fen = fen
-        self.piece = self.Find_Piece_From_GameState(self)
+        self.piece = self.Find_Piece_From_GameState()
 
     def Find_Piece_From_GameState(self):
 
