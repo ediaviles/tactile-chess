@@ -111,7 +111,7 @@ const eventController = async (data) => {
 let movesMadeArr = []
 let movesIndex = 0
 let fen = ''*//*
-let fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+STARTING FEN NOTATION: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 let turn = 'w'
 let gameId = null*/
 

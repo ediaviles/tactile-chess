@@ -25,6 +25,35 @@ class State:
         self.lastMove = ''
         self.move = move
         self.fen = fen
+        self.piece = self.Find_Piece_From_GameState(self)
+
+    def Find_Piece_From_GameState(self):
+
+        # Setup mappings
+        rowToIndex = {1: 7, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2, 7: 1, 8: 0}
+        colToIndex = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
+
+        move, fen = self.move, self.fen
+        entireFen = fen.split(" ")
+        boardFen = entireFen[0].split("/")
+        src, dst = move[:2], move[2:]
+        
+        #get row from origin
+        c, r = src[0], int(src[1])
+        rowIndex = rowToIndex[r]
+        colIndex = colToIndex[c]
+
+        piece = ''
+        curCol = 0
+        for s in boardFen[rowIndex]:
+            if s.isnumeric():
+                curCol += int(s)
+            elif curCol == colIndex:
+                piece = s
+                break
+            else:
+                curCol += 1
+        return piece
 
 def Make_Moves(moves, gameState: State):
     gameState.stockfish.make_moves_from_current_position(moves)
@@ -72,30 +101,7 @@ def Get_Move_From_Serial():
             #make move with data
             break
 
-def Find_Piece_From_GameState(gameState):
-    move, fen = gameState.move, gameState.fen
-    rowToIndex = {1: 7, 2: 6, 3: 5, 4: 4, 5: 3, 6: 2, 7: 1, 8: 0}
-    colToIndex = {'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7}
-    entireFen = fen.split(" ")
-    boardFen = entireFen[0].split("/")
-    src, dst = move[:2], move[2:]
-    
-    #get row from origin
-    c, r = src[0], int(src[1])
-    rowIndex = rowToIndex[r]
-    colIndex = colToIndex[c]
 
-    piece = ''
-    curCol = 0
-    for s in boardFen[rowIndex]:
-        if s.isnumeric():
-            curCol += int(s)
-        elif curCol == colIndex:
-            piece = s
-            break
-        else:
-            curCol += 1
-    return piece
 
 
 
@@ -141,18 +147,17 @@ if __name__ == '__main__':
     else:
         result = str(Validate_State_Move(gameState))
 
-    if(result == "-1"):
-        gameState.fen = fen
+    #if(result == "-1"):
+    #    gameState.fen = fen
             
     message = ""
-    piece = Find_Piece_From_GameState(gameState)
     if(result == "-1"):
-        message = "ERROR_MOVE_INVALID:" + piece + " " + move
+        message = "ERROR_MOVE_INVALID:" + gameState.piece + " " + gameState.move
     else:
         message = "USR_MOVE:"
         if(update):
             message = "OPP_MOVE:"
-        message += piece + " " + move
+        message += gameState.piece + " " + gameState.move
     
     print(result)
     subprocess.run(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
