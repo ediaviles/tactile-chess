@@ -163,29 +163,19 @@ if __name__ == '__main__':
     if(update):
         result = Make_Moves([move], gameState)
         
-        # piece = Find_Piece_From_GameState(gameState)
-        # message = piece + " " + move
-
-        # exit(1)
     else:
         result = str(Validate_State_Move(gameState))
-        # if (result != "-1"):
-            # piece = Find_Piece_From_GameState(gameState)
-            # print(piece)
-            # message = piece + " " + move
-
-        # else:
-            # message = "The move " + move + " is invalid"
-            
+        
     message = ""
     piece = Find_Piece_From_GameState(gameState)
     if(result == "-1"):
-        message = "ERROR_MOVE_INVALID:" + piece + " " + move
-    else:
-        message = "USR_MOVE:"
-        if(update):
-            message = "OPP_MOVE:"
-        message += piece + " " + move
+		# message = "ERROR_MOVE_INVALID:" + piece + " " + move
+		message = "ERROR_MOVE_INVALID:" + piece + " " + move
+	else:
+		message = "USR_MOVE:"
+		if(update):
+			message = "OPP_MOVE:"
+		message += piece + " " + move
 
     subprocess.run(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
     # print(result)
