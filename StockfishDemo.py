@@ -58,31 +58,7 @@ def AI_Make_Move(gameState: State):
     gameState.stockfish.make_moves_from_current_position([move])
     return move
 
-# def handleGameState(gameState: State):
-#     '''
-#     Function to handle game state changes
 
-#     :param turn: integer value 0 or 1 representing current player's turn 
-#     :param stockfish: Stockfish class representing current game being played
-
-#     :return: turn, newFen -> return current player's turn after move is made or not made, updated fen of new board state
-#     '''
-#     # turn = gameState.fen.split(" ")[1]
-#     # if turn == 'w':
-#         #print(gameState.stockfish.get_board_visual())      # print current state of the board
-#     move = Check_User_Move(gameState)     # request user move
-
-#     # else:
-#     #     move = AI_Make_Move(gameState)
-#     #     print("Opponent made the following move: " + move)
-#         # turn = 1
-#     return gameState.stockfish.get_fen_position() # return new turn and update fen
-
-# def Pass_Move(gameState):
-#     turn = gameState.fen.split(" ")[1]
-#     if(turn == 'w'):
-#         return
-#     return
 def Get_Move_From_Serial():
     #establish arduino connection
     arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.1)
@@ -103,8 +79,9 @@ def Find_Piece_From_GameState(gameState):
     entireFen = fen.split(" ")
     boardFen = entireFen[0].split("/")
     src, dst = move[:2], move[2:]
+    
     #get row from origin
-    c, r = dst[0], int(dst[1])
+    c, r = src[0], int(src[1])
     rowIndex = rowToIndex[r]
     colIndex = colToIndex[c]
 
@@ -135,7 +112,7 @@ def Validate_State_Move(gameState: State):
         # Pass_Move(gameState)
         #return error code
     else:
-        print("Not a valid FEN")
+        # print("Not a valid FEN")
         return -1
     #print(gameState.stockfish.get_board_visual()) 
     
@@ -155,27 +132,17 @@ if __name__ == '__main__':
     move = args.move
     fen = args.fen
     update = args.update
-    #print(move, fen, type(update))
-    #print(fen)
+    
     gameState = State(fen, move)
-    #print(Find_Piece_From_GameState(gameState))
+    
     result = "-1"
     if(update):
-        result = Make_Moves([move], gameState)
-        
-        # piece = Find_Piece_From_GameState(gameState)
-        # message = piece + " " + move
-
-        # exit(1)
+        result = str(Make_Moves([move], gameState))
     else:
         result = str(Validate_State_Move(gameState))
-        # if (result != "-1"):
-            # piece = Find_Piece_From_GameState(gameState)
-            # print(piece)
-            # message = piece + " " + move
 
-        # else:
-            # message = "The move " + move + " is invalid"
+    if(result == "-1"):
+        gameState.fen = fen
             
     message = ""
     piece = Find_Piece_From_GameState(gameState)
@@ -186,9 +153,11 @@ if __name__ == '__main__':
         if(update):
             message = "OPP_MOVE:"
         message += piece + " " + move
-
+    
+    print(result)
     subprocess.run(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
-    # print(result)
+    
+    
         # exit(0)
     
 
