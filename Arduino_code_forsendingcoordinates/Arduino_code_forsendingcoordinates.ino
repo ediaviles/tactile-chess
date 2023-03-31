@@ -27,7 +27,7 @@ void setup() {
   digitalWrite(DIGITAL_PIN_7, HIGH);
 
   for(int i = 0; i<8; i++){
-    prevValues[i] = -1;
+    prevValues[i] = -1; //TODO: If we store differences, we might want to initialize to diff values?
   }
 }
 
@@ -53,7 +53,7 @@ void loop() {
       digitalRead(DIGITAL_PIN_4) != bitRead(groupCounter, 0) ||
       digitalRead(DIGITAL_PIN_5) != bitRead(groupCounter, 1) ||
       digitalRead(DIGITAL_PIN_6) != bitRead(groupCounter, 2)) {
-    int currentValue = analogRead(ANALOG_PIN);
+    int currentValue = analogRead(ANALOG_PIN); //TODO: What happens when piece is removed? It reads the normal voltage (2.5V) and that's what we save. Shouldn't we save the differences?
     int digitalValue = (bitRead(binaryCounter, 0) << 0) |
                        (bitRead(binaryCounter, 1) << 1) |
                        (bitRead(binaryCounter, 2) << 2) |
@@ -62,8 +62,8 @@ void loop() {
                        (bitRead(groupCounter, 2) << 5);
     if (currentValue != prevValues[binaryCounter]){
       matrix[binaryCounter][groupCounter] = currentValue;
-      prevValues[binaryCounter] = currentValue;
-      int combined = (groupCounter << 3) | binaryCounter;
+      prevValues[binaryCounter] = currentValue;  //TODO: WHY IS PREV VALUES ONLY SIZE 8? Shouldn't it be reset for each row?
+      int combined = (groupCounter << 3) | binaryCounter;//TODO: Isn't this equal to the digital value?
       switch(combined){
         case 0:
           Serial.println("a1");
@@ -268,10 +268,10 @@ void loop() {
     binaryCounter = 0;
     groupCounter++;
     if (groupCounter == 8) {
-      binaryCounter = 0;
+      groupCounter = 0;
     }
   }
   
   // Wait for a short period before updating again
-  delay(30);
+  delay(30); //TODO: Do we want to reduce delay to reduce latency?
 }
