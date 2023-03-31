@@ -12,7 +12,7 @@ int groupCounter = 0;
 int matrix[8][8];
 int prevValues[8];
 
-void setup() {
+void setup() { // TODO: Shouldn't the input and output pins be swapped?
   pinMode(DIGITAL_PIN_1, OUTPUT);
   pinMode(DIGITAL_PIN_2, OUTPUT);
   pinMode(DIGITAL_PIN_3, OUTPUT);

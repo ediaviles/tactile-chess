@@ -7,6 +7,14 @@ class CreateAction:
         self.data = [] #A list of tuples. First element is piece. Second element is coordinate
         self.isCastling = False #'True' if in the process of castling
         self.actionType = ''
+        
+    def to_dict(self):
+        return {
+            'move': self.move,
+            'isCastling': self.isCastling,
+            'actionType': self.actionType,
+            'actionResult': self.actionResult
+        }
 
     def isMoveDone(self):
         pieces = dict()
@@ -16,30 +24,41 @@ class CreateAction:
                     (piece == "R" and "K" in pieces and piece == "r" and "k" in pieces)):
                     # Castling
                     self.isCastling = True
-                    break
-                elif (self.isCastling) and ((piece == "K" and "K" in pieces and pieces["K"] == 1 and "R" in pieces and pieces["R"] == 2) or \
-                      (piece == "k" and "k" in pieces and pieces["k"] == 1 and "r" in pieces and pieces["r"] == 2) or \
-                      (piece == "R" and "R" in pieces and pieces["R"] == 1 and "k" in pieces and pieces["k"] == 2) or \
-                      (piece == "r" and "r" in pieces and pieces["r"] == 1 and "k" in pieces and pieces["k"] == 2)):
+                elif (self.isCastling) and ((piece == "K" and "K" in pieces and pieces["K"][0] == 1 and "R" in pieces and pieces["R"][0] == 2) or \
+                      (piece == "k" and "k" in pieces and pieces["k"][0] == 1 and "r" in pieces and pieces["r"][0] == 2) or \
+                      (piece == "R" and "R" in pieces and pieces["R"][0] == 1 and "k" in pieces and pieces["k"][0] == 2) or \
+                      (piece == "r" and "r" in pieces and pieces["r"][0] == 1 and "k" in pieces and pieces["k"][0] == 2)):
                     #castling complete
                     self.actionType = "Castling"
+                    currPiece, currCoor = piece, pieces[piece][1]+coor
+                    pieces.pop(piece)
+                    resPiece, coorInfo = next(iter(my_dict.items()))
+                    self.move = resPiece + coorInfo
+                    self.actionResult = currPiece + currCoor
                     break
                 elif(len(data) == 3):
                     self.actionType = "Capture"
+                    self.move = piece + pieces.pop(piece)[1] + coordinate
+                    resPiece, coor_info = next(iter(my_dict.items()))
+                    self.actionResult = resPiece + coor_info[1]
                     break
                 elif(len(data) == 2):
                     self.actionType = "Move"
-            else:
-                if(piece not in pieces):
-                    pieces[piece] = 1
-                else:
-                    pieces[piece] += 1
+                    self.move = piece + pieces.pop(piece)[1] + coordinate
+                    self.actionResult = ''
+                    break
+                
+                pieces[piece] = (pieces[piece][0] + 1, pieces[piece][1] + coordinate)
+            else: 
+                pieces[piece] = (1, coordinate)
                     
         if(self.actionType != ''):
             return True
         else:
             return False
-
+            
+    def Send_Action(self):
+        pass
 
 
 
@@ -66,7 +85,8 @@ class Arduino:
                 # (different piece = same color king and rook) = castle
                 
                 if(action.isMoveDone()):
-                    # send action info over to SMV
+                    # send action info over to JS script
+                    action.Send_Action()
                     pass
                     
                 
