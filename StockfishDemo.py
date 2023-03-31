@@ -87,21 +87,21 @@ def AI_Make_Move(gameState: State):
     gameState.stockfish.make_moves_from_current_position([move])
     return move
 
-
 def Get_Move_From_Serial():
     #establish arduino connection
-    arduino = serial.Serial(port='COM4', baudrate=115200, timeout=.1)
-    while True:
-        time.sleep(0.05)
-        data = arduino.readline()
-        #case on data being valid or invalid
-        if data == '-1':
-            continue
-        else:
-            #make move with data
-            break
-
-
+    arduino = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=.1)
+    time.sleep(0.1)
+    if arduino.isOpen():
+        while True:
+            data = arduino.readline()
+            print(data)
+            #case on data being valid or invalid
+            if data == '-1':
+                continue
+            else: 
+                #make move with data
+                break
+    return
 
 
 
