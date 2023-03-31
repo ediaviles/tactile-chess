@@ -1,11 +1,12 @@
 import serial
 import time
-
+import json
 
 class CreateAction:
     def __init__(self):
         self.data = [] #A list of tuples. First element is piece. Second element is coordinate
         self.isCastling = False #'True' if in the process of castling
+        self.actionType = ''
 
     def isMoveDone(self):
         pieces = dict()
@@ -21,11 +22,23 @@ class CreateAction:
                       (piece == "R" and "R" in pieces and pieces["R"] == 1 and "k" in pieces and pieces["k"] == 2) or \
                       (piece == "r" and "r" in pieces and pieces["r"] == 1 and "k" in pieces and pieces["k"] == 2)):
                     #castling complete
+                    self.actionType = "Castling"
                     break
-                
-                
+                elif(len(data) == 3):
+                    self.actionType = "Capture"
+                    break
+                elif(len(data) == 2):
+                    self.actionType = "Move"
             else:
-                pieces.add(piece)
+                if(piece not in pieces):
+                    pieces[piece] = 1
+                else:
+                    pieces[piece] += 1
+                    
+        if(self.actionType != ''):
+            return True
+        else:
+            return False
 
 
 
@@ -52,7 +65,12 @@ class Arduino:
                 #if len(data) == 2 -> (same piece) = piece move, (different piece != same color king and rook) = capture
                 # (different piece = same color king and rook) = castle
                 
-                action.isMoveDone()
+                if(action.isMoveDone()):
+                    # send action info over to SMV
+                    pass
+                    
+                
+                
             else:   
                 # DATA IS INVALID AND ERROR HAS BEEN LOGGED
                 pass  

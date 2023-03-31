@@ -160,7 +160,7 @@ if __name__ == '__main__':
         message += gameState.piece + " " + gameState.move
     
     print(result)
-    subprocess.run(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
+    subprocess.Popen(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
     
     
         # exit(0)
