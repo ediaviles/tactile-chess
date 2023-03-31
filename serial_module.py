@@ -79,10 +79,6 @@ class Arduino:
                     action.data.remove((piece, coordinate))
                 else:
                     action.data.append((piece, coordinate))
-
-                #edge is if same color king and rook are picked up
-                #if len(data) == 2 -> (same piece) = piece move, (different piece != same color king and rook) = capture
-                # (different piece = same color king and rook) = castle
                 
                 if(action.isMoveDone()):
                     # send action info over to JS script
@@ -91,9 +87,9 @@ class Arduino:
                     
                 
                 
-            else:   
-                # DATA IS INVALID AND ERROR HAS BEEN LOGGED
-                pass  
+            else:
+                message = f"Error on in data received from arduino. Data received was {data}"
+                subprocess.Popen(['python3', 'logger.py', '-message', message])
         return
     
     def Validate_Data(self, data):
