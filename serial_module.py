@@ -63,7 +63,7 @@ class CreateAction:
     def Send_Action(self):
         ndjson_data = ""
         for key, value in self.to_dict():
-            ndjson_data = json.dumps({key: value}) + "\n"
+            ndjson_data += json.dumps({key: value}) + "\n"
         print(ndjson_data)
 
 
