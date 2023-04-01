@@ -21,6 +21,36 @@ const rl = readline.createInterface({
     output: process.stdout,
 })
 
+async function getInfoFromArduino() {
+    const arduinoCommunication = spawn('python3', ['serial_module.py'])
+    arduinoCommunication.stdout.on('data', (data) => { //the data received should be an ndjson string
+        const dataJSONstrs = data.trim().split('\n')
+        const dataJSON = dataJSONstrs.map(dataJSONstr => {JSON.parse(dataJSONstr)}) //turn the data received into a json object
+        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', dataJSON.move])
+        pythonProcess.stdout.on('data', (data) => {
+            const dataString = data.toString().trim()
+            if (dataString !== "-1" && dataString !== gameState.fen) {
+                gameState.fen = dataString
+                gameState.moves.push(answer)
+                axios.post(`https://lichess.org/api/board/game/${gameState.gameId}/move/${answer}`, {},
+                    {
+                        headers: headers,
+                        method: 'POST',
+                        mode: 'cors'
+                    })
+            } else if(dataString === "-1") {
+                getInfoFromArduino()
+            }
+        });
+        pythonProcess.on('close', (code) => {
+            console.log(`Stockfish validation ended.`)
+        })
+    })
+    arduinoCommunication.on('close', (code) => {
+        console.log(`Arduino communication ended.`)
+    })
+}
+
 async function ask(question) {
     rl.question(question, (answer) => {
         if(answer === "q") {
