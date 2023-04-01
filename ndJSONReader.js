@@ -7,6 +7,7 @@ const Chess = require('chess.js')
 const axios = require('axios')
 const {spawnSync, spawn} = require('child_process')
 const ndjson = require('ndjson')
+const ndjsonParser = require('ndjson-parser');
 const EventEmitter = require('events')
 const readline = require('readline');
 const makeMove = require('./services')

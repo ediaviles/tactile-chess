@@ -1,12 +1,15 @@
 import serial
 import time
 import json
+import subprocess
 
 class CreateAction:
     def __init__(self):
         self.data = [] #A list of tuples. First element is piece. Second element is coordinate
         self.isCastling = False #'True' if in the process of castling
         self.actionType = ''
+        self.actionResult = ''
+        self.move = ''
         
     def to_dict(self):
         return {
@@ -58,22 +61,30 @@ class CreateAction:
             return False
             
     def Send_Action(self):
-        pass
+        json_data = json.dumps(self.to_dict())
+        # Send the JSON data to the ndJSON script via a subprocess and pipe
+        ndjson_process = subprocess.Popen(['node', 'my_ndjson_script.js'], stdin=subprocess.PIPE)
+        ndjson_process.stdin.write((json_data + '\n').encode('utf-8'))
+        ndjson_process.stdin.close()
+
+        # Wait for the subprocess to complete
+        ndjson_process.wait()
 
 
 
 class Arduino:
     def __init__(self):
-        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=.1)
+        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
         self.pieces = set({"P", "R", "N", "B", "Q", "K"
                            "p", "r", "n", "b", "q", "k"})
 
     def establishSerialCommunication(self):
         action = CreateAction()
         while True:
-            data = self.arduino.readline()
-            if(self.Validate_Data(data)):
-                data_decoded = data.decode('utf_8', errors='ignore')
+            data_decoded = self.arduino.readline().decode().rstrip()
+            
+            if(data_decoded and self.Validate_Data(data_decoded)):
+                print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
                 if((piece, coordinate) in action.data): #Piece is lifted and placed down
                     action.data.remove((piece, coordinate))
@@ -88,32 +99,36 @@ class Arduino:
                 
                 
             else:
-                message = f"Error on in data received from arduino. Data received was {data}"
-                subprocess.Popen(['python3', 'logger.py', '-message', message])
+                message = f"Error in data received from arduino. Data received was {data_decoded}"
+                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
         return
     
-    def Validate_Data(self, data):
+    def Validate_Data(self, data_decoded):
         '''
         Data from Arduino Uno has to be of the format "<piece type><column coordinate (letter)><row coordinate (number)
         '''
-        data_decoded = data.decode('utf-8', errors='ignore')
         print(data_decoded)
         try:
             if(len(data_decoded) != 3):
-                #Log Error
-                pass
+                message = f"Data should be of ther form <piece><coordinate>. Data received was {data_decoded}"
+                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                return False
             if(data_decoded[0] not in self.pieces):
-                #Log Error
-                pass
+                message = f"First character is not a valid piece. Data received was {data_decoded}"
+                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                return False
             if(not data_decoded[1].isalpha()):
-                #Log Error
-                pass
+                message = f"Second character must be a letter for the column coordinate. Data received was {data_decoded}"
+                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                return False
             if(not data_decoded[2].isnum()):
-                #Log Error
-                pass
+                message = f"Third character must be a number for the row coordinate. Data received was {data_decoded}"
+                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                return False
             return True
-        except:
+        except Exception as e:
             #Data was not decoded properly, or is not a string after decoding
+            subprocess.Popen(['python3', 'logger.py', '-message', str(e), "-filename", "error.log"])
             return False
 
 if __name__ == '__main__':
@@ -122,6 +137,4 @@ if __name__ == '__main__':
     if arduino.arduino.isOpen():
         #Get data and validate it
         arduino.establishSerialCommunication()
-
-        #Create a Move
         
