@@ -61,14 +61,10 @@ class CreateAction:
             return False
             
     def Send_Action(self):
-        json_data = json.dumps(self.to_dict())
-        # Send the JSON data to the ndJSON script via a subprocess and pipe
-        ndjson_process = subprocess.Popen(['node', 'my_ndjson_script.js'], stdin=subprocess.PIPE)
-        ndjson_process.stdin.write((json_data + '\n').encode('utf-8'))
-        ndjson_process.stdin.close()
-
-        # Wait for the subprocess to complete
-        ndjson_process.wait()
+        ndjson_data = ""
+        for key, value in self.to_dict():
+            ndjson_data = json.dumps({key: value}) + "\n"
+        print(ndjson_data)
 
 
 
