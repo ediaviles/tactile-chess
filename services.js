@@ -1,7 +1,9 @@
 const fetchData = require('./ndJSONReader.js')
 const axios = require('axios')
-const {spawnSync, spawn} = require('child_process')
+const {spawnSync, spawn} = require('child_process');
+const { create } = require('domain');
 const readline = require('readline');
+const Gpio = require('onoff').Gpio
 
 
 const headers = {
@@ -70,12 +72,22 @@ const makeMove = (gameId, move) => {
         })
 }
 
+const GPIO_PIN = 17;
+const gpio = new Gpio(GPIO_PIN, 'in', 'both')
+
 function main() {
-	const functionCall = process.argv[2]
-	
-	if (functionCall === "createAISeek") {
-		createAISeek()
-	}
+	console.log('Monitoring GPIO pin', GPIO_PIN)
+
+    gpio.watch((err, value) => {
+        if (err) {
+            throw err;
+        }
+
+        if (value === 1) {
+            console.log("Button pressed")
+            createAISeek()
+        }
+    })
 }
 
 if (require.main === module) {
