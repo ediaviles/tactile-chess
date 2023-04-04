@@ -20,34 +20,30 @@ const rl = readline.createInterface({
     output: process.stdout,
 })
 
-async function getInfoFromArduino() {
-    const arduinoCommunication = spawn('python3', ['serial_module.py'])
-    arduinoCommunication.stdout.on('data', (data) => { //the data received should be an ndjson string
-        const dataJSONstrs = data.trim().split('\n')
-        const dataJSON = dataJSONstrs.map(dataJSONstr => {JSON.parse(dataJSONstr)}) //turn the data received into a json object
-        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move])
-        pythonProcess.stdout.on('data', (data) => {
-            const dataString = data.toString().trim()
-            if (dataString !== "-1" && dataString !== global.FEN) {
-                global.FEN = dataString
-                global.moves.push(answer)
-                axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${answer}`, {},
-                    {
-                        headers: headers,
-                        method: 'POST',
-                        mode: 'cors'
-                    })
-            } else if(dataString === "-1") {
-                getInfoFromArduino()
-            }
-        });
-        pythonProcess.on('close', (code) => {
-            console.log(`Stockfish validation ended.`)
-        })
-    })
-    arduinoCommunication.on('close', (code) => {
-        console.log(`Arduino communication ended.`)
-    })
+const prevData = null
+
+const validatePythonProcess = (data) => {
+        const dataString = data.toString().trim()
+        if (dataString !== "-1" && dataString !== global.FEN) {
+            global.FEN = dataString
+            global.moves.push(dataJSON.move)
+            axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${dataJSON.move}`, {}, {headers: headers})
+            global.arduinoCommunication.stdout.off('data', handleArduinoMoveInfo)
+        } else if (dataString === "-1") {console.log('invalid move')}
+    }
+
+const handleArduinoMoveInfo = (data) => {
+        const dataJSONstrs = data.toString().trim().split('\n')
+        const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
+        if (dataJSON !== prevData) {
+            prevData = dataJSON
+            const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move])
+            pythonProcess.stdout.on('data', validatePython)
+        }
+    }
+
+function getInfoFromArduino() {
+    global.arduinoCommunication.on('data', handleArduinoMoveInfo)
 }
 
 async function ask(question) {
