@@ -69,34 +69,46 @@ const makeMove = (gameId, move) => {
 
 const GPIO_PIN_START = 17;
 const GPIO_PIN_RESIGN = 16;
-const GPIO_PIN_CONFIRM = 15;
 const gpio_start = new Gpio(GPIO_PIN_START, 'in', 'both')
 const gpio_resign = new Gpio(GPIO_PIN_RESIGN, 'in', 'both')
-const gpio_confirm = new Gpio(GPIO_PIN_CONFIRM, 'in', 'both')
-global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+
+global.gameId = null
+global.gameFEN = null
+global.moves = null
+global.isCalibrationDone = false
+global.arduinoCommunication = null
+
+const listenForCalibration = (data) => {
+                    const dataJSONstrs = data.toString().trim().split('\n')
+                    const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
+                    //console.log(dataJSON) // this should be the information thats being received
+                    //TODO case on information and start game when a specific condition is met
+                    if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
+                        //console.log('Calibration is done, game seek has started')
+                        global.isCalibrationDone = true
+                        global.arduinoCommunication.stdout.off('data', listenForCalibration)
+                        console.log('Game seek started')
+                        createAISeek()
+                    }
+                }
 
 function main() {
+    global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+    global.gameId = null
+    global.gameFEN = null
+    global.moves = null
+    global.isCalibrationDone = false
+    
     gpio_start.watch((err, value) => {
         if (err) {
             throw err;
         }
-
-        if (value === 1 && global.calibrating === false) {
+        if (value === 1) {
             // calibration mode which calls the audio module
             // waits for confirm
             // once confirm is pressed the arduino runs
             console.log("Button pressed")
-            global.calibrating = true
-            global.arduinoCommunication.stdout.on('data', (data) => {
-                const dataJSONstrs = data.trim().split('\n')
-                const dataJSON = dataJSONstrs.map(dataJSONstr => {JSON.parse(dataJSONstr)})
-                console.log(dataJSON) // this should be the information thats being received
-
-                //TODO case on information and start game when a specific condition is met
-                if (true && gameId === null) {
-                    createAISeek()
-                }
-            })            
+            global.arduinoCommunication.stdout.on('data', listenForCalibration)
         }
     })
 
@@ -106,6 +118,7 @@ function main() {
         }
 
         if (value === 1 && global.gameId !== null) {
+            console.log('Game resigned')
             // Once we resign game reset all values related to the game state
             resignGame(global.gameId)
 
@@ -113,17 +126,7 @@ function main() {
             global.gameId = null
             global.FEN = null
             global.moves = null
-            global.calibrating = false
-        }
-    })
-
-    gpio_confirm.watch((err, value) => {
-        if (err) {
-            throw err;
-        }
-
-        if (value === 1 && global.calibrating === true) {
-            console.log('confirm calibration')
+            global.isCalibrationDone = false
         }
     })
 }

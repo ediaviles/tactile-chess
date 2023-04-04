@@ -9,7 +9,7 @@ const {spawnSync, spawn} = require('child_process')
 const ndjson = require('ndjson')
 const EventEmitter = require('events')
 const readline = require('readline');
-const makeMove = require('./services')
+const makeMove = require('./services.js')
 
 const headers = {
     Authorization: 'Bearer ' + 'lip_Zt6rLGHWhZj8qcaeTaLG'
@@ -55,12 +55,12 @@ async function ask(question) {
         if(answer === "q") {
             process.exit(1)
         }
-        rl.write(`The answer received:  ${answer}\n`)
-        console.log('this is the game fen before move: '+global.FEN)
-        console.log('this is the move to be played: ' + answer)
+        //rl.write(`The answer received:  ${answer}\n`)
+        //console.log('this is the game fen before move: '+global.FEN)
+        //console.log('this is the move to be played: ' + answer)
         const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', answer])
         pythonProcess.stdout.on('data', (data) => {
-            console.log('stdout: ' + data)
+            //console.log('stdout: ' + data)
             const dataString = data.toString().trim()
             if (dataString !== "-1" && dataString !== global.FEN) {
                 global.FEN = dataString
@@ -76,7 +76,7 @@ async function ask(question) {
             }
         });
         pythonProcess.on('close', (code) => {
-            console.log('child process exited user move')
+            //console.log('child process exited user move')
         })
     })
 }
@@ -102,14 +102,14 @@ const eventController = async (data) => {
                 if (!global.moves.includes(lastMove)) {
                     const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', lastMove, '-update', 'True'])
                     pythonProcess.stdout.on('data', (data) => {
-                        console.log('stdout: '+ data)
+                        //console.log('stdout: '+ data)
                         const dataString = data.toString().trim()
                         if (dataString !== '-1' && dataString !== global.FEN) {
                             global.FEN = dataString
                         }
                     })
                     pythonProcess.on('close', (code) => {
-                        console.log('child process exited opponent move')
+                        //console.log('child process exited opponent move')
                         ask('what is your move?')
                     }); 
                 }
@@ -137,19 +137,7 @@ const eventController = async (data) => {
         }
     }
 }
-/*const chess = new Chess();
-let movesMadeArr = []
-let movesIndex = 0
-let fen = ''*//*
-STARTING FEN NOTATION: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-let turn = 'w'
-let gameId = null*/
 
-let gameState = {
-    fen: null,
-    moves: null,
-    gameId: null
-}
 const fetchData = async (command, props) => {
     const streamEmitter = new EventEmitter()
     switch (command) {
@@ -205,7 +193,7 @@ const fetchData = async (command, props) => {
     }
     streamEmitter.on('data', (data) => {
         if (data.hasOwnProperty('type')) {
-            eventController(data, gameState)
+            eventController(data, {})
         }
     });
 

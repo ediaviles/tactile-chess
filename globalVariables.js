@@ -3,5 +3,5 @@
 global.gameId = null
 global.gameFEN = null
 global.moves = null
-global.calibrating = false
+global.isCalibrationDone = false
 global.arduinoCommunication = null

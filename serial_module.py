@@ -2,21 +2,28 @@ import serial
 import time
 import json
 import subprocess
+import sys
 
 class CreateAction:
     def __init__(self):
+        self.reset()
+        self.prevMessage = None
+        
+    def reset(self):
         self.data = [] #A list of tuples. First element is piece. Second element is coordinate
         self.isCastling = False #'True' if in the process of castling
         self.actionType = ''
         self.actionResult = ''
         self.move = ''
+        self.isCalibrationDone = False
         
     def to_dict(self):
         return {
             'move': self.move,
             'isCastling': self.isCastling,
             'actionType': self.actionType,
-            'actionResult': self.actionResult
+            'actionResult': self.actionResult,
+            'isCalibrationDone': self.isCalibrationDone
         }
 
     def isMoveDone(self):
@@ -62,15 +69,16 @@ class CreateAction:
             
     def Send_Action(self):
         ndjson_data = ""
-        for key, value in self.to_dict():
+        for key, value in self.to_dict().items():
             ndjson_data += json.dumps({key: value}) + "\n"
+        sys.stdout.flush()
         print(ndjson_data)
 
 
 
 class Arduino:
     def __init__(self):
-        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
+        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
         self.pieces = set({"P", "R", "N", "B", "Q", "K"
                            "p", "r", "n", "b", "q", "k"})
 
@@ -78,8 +86,10 @@ class Arduino:
         action = CreateAction()
         while True:
             data_decoded = self.arduino.readline().decode().rstrip()
-            
-            if(data_decoded and self.Validate_Data(data_decoded)):
+            if (data_decoded and data_decoded == 'Calibration Complete'):
+                action.isCalibrationDone = True
+                action.Send_Action()
+            elif(data_decoded and self.Validate_Data(data_decoded)):
                 print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
                 if((piece, coordinate) in action.data): #Piece is lifted and placed down
@@ -94,35 +104,35 @@ class Arduino:
                     
             else:
                 message = f"Error in data received from arduino. Data received was {data_decoded}"
-                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
+            sys.stdout.flush()
         return
     
     def Validate_Data(self, data_decoded):
         '''
         Data from Arduino Uno has to be of the format "<piece type><column coordinate (letter)><row coordinate (number)
         '''
-        print(data_decoded)
         try:
             if(len(data_decoded) != 3):
                 message = f"Data should be of ther form <piece><coordinate>. Data received was {data_decoded}"
-                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
                 return False
             if(data_decoded[0] not in self.pieces):
                 message = f"First character is not a valid piece. Data received was {data_decoded}"
-                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
                 return False
             if(not data_decoded[1].isalpha()):
                 message = f"Second character must be a letter for the column coordinate. Data received was {data_decoded}"
-                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
                 return False
             if(not data_decoded[2].isnum()):
                 message = f"Third character must be a number for the row coordinate. Data received was {data_decoded}"
-                subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])
+                subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
                 return False
             return True
         except Exception as e:
             #Data was not decoded properly, or is not a string after decoding
-            subprocess.Popen(['python3', 'logger.py', '-message', str(e), "-filename", "error.log"])
+            subprocess.Popen(['python3', 'logger.py', '-text', str(e), "-filename", "error.log"])
             return False
 
 if __name__ == '__main__':
@@ -131,4 +141,4 @@ if __name__ == '__main__':
     if arduino.arduino.isOpen():
         #Get data and validate it
         arduino.establishSerialCommunication()
-        
+            
