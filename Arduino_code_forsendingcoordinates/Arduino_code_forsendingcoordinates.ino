@@ -53,7 +53,8 @@ void loop() {
       digitalRead(DIGITAL_PIN_4) != bitRead(groupCounter, 0) ||
       digitalRead(DIGITAL_PIN_5) != bitRead(groupCounter, 1) ||
       digitalRead(DIGITAL_PIN_6) != bitRead(groupCounter, 2)) {
-    int currentValue = analogRead(ANALOG_PIN); //TODO: What happens when piece is removed? It reads the normal voltage (2.5V) and that's what we save. Shouldn't we save the differences?
+    int analogValue = analogRead(ANALOG_PIN); //TODO: What happens when piece is removed? It reads the normal voltage (2.5V) and that's what we save. Shouldn't we save the differences?
+    float currentValue = analogValue * (5.0 / 1023.0); // convert analog value to voltage
     int digitalValue = (bitRead(binaryCounter, 0) << 0) |
                        (bitRead(binaryCounter, 1) << 1) |
                        (bitRead(binaryCounter, 2) << 2) |

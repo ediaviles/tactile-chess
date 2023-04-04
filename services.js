@@ -16,7 +16,7 @@ const formData = (data) => {
 
 const createAISeek = () => {
     //First start a stream
-    console.log("In createAISeek")
+    //console.log("In createAISeek")
     const data = {
         level: 1,
         'clock.limit': 60 * 3,
@@ -70,7 +70,17 @@ const makeMove = (gameId, move) => {
         })
 }
 
-createAISeek()
+function main() {
+	const functionCall = process.argv[2]
+	
+	if (functionCall === "createAISeek") {
+		createAISeek()
+	}
+}
+
+if (require.main === module) {
+	main();
+}
 module.exports = makeMove
 //const pyScript = spawn('python3', ['StockfishDemo.py', 'test']);
 
