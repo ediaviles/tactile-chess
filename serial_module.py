@@ -92,8 +92,6 @@ class Arduino:
                     action.Send_Action()
                     pass
                     
-                
-                
             else:
                 message = f"Error in data received from arduino. Data received was {data_decoded}"
                 subprocess.Popen(['python3', 'logger.py', '-message', message, "-filename", "error.log"])

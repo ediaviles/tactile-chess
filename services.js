@@ -3,7 +3,8 @@ const axios = require('axios')
 const {spawnSync, spawn} = require('child_process');
 const { create } = require('domain');
 const readline = require('readline');
-const Gpio = require('onoff').Gpio
+const Gpio = require('onoff').Gpio;
+
 
 
 const headers = {
@@ -16,9 +17,13 @@ const formData = (data) => {
     return formData;
 };
 
+const resignGame = (gameId) => {
+    axios.post(`https://lichess.org/api/board/game/${gameId}/resign`,
+        {},
+        {headers: headers})
+}
+
 const createAISeek = () => {
-    //First start a stream
-    //console.log("In createAISeek")
     const data = {
         level: 1,
         'clock.limit': 60 * 3,
@@ -32,18 +37,6 @@ const createAISeek = () => {
         },
         {headers: headers}
     )
-    //Then start a seek
-    /*fetch(`https://lichess.org/api/challenge/ai`,
-        {
-            headers: headers,
-            method: 'POST',
-            mode: 'cors',
-            body: formData({
-                level: 1,
-                'clock.limit': 60 * 3,
-                'clock.increment': 2,
-            })
-        })*/
 }
 
 const createOnlineSeek = () => {
@@ -72,20 +65,65 @@ const makeMove = (gameId, move) => {
         })
 }
 
-const GPIO_PIN = 17;
-const gpio = new Gpio(GPIO_PIN, 'in', 'both')
+//Estbalish GPIO pins and arduino communication
+
+const GPIO_PIN_START = 17;
+const GPIO_PIN_RESIGN = 16;
+const GPIO_PIN_CONFIRM = 15;
+const gpio_start = new Gpio(GPIO_PIN_START, 'in', 'both')
+const gpio_resign = new Gpio(GPIO_PIN_RESIGN, 'in', 'both')
+const gpio_confirm = new Gpio(GPIO_PIN_CONFIRM, 'in', 'both')
+global.arduinoCommunication = spawn('python3', ['serial_module.py'])
 
 function main() {
-	console.log('Monitoring GPIO pin', GPIO_PIN)
-
-    gpio.watch((err, value) => {
+    gpio_start.watch((err, value) => {
         if (err) {
             throw err;
         }
 
-        if (value === 1) {
+        if (value === 1 && global.calibrating === false) {
+            // calibration mode which calls the audio module
+            // waits for confirm
+            // once confirm is pressed the arduino runs
             console.log("Button pressed")
-            createAISeek()
+            global.calibrating = true
+            global.arduinoCommunication.stdout.on('data', (data) => {
+                const dataJSONstrs = data.trim().split('\n')
+                const dataJSON = dataJSONstrs.map(dataJSONstr => {JSON.parse(dataJSONstr)})
+                console.log(dataJSON) // this should be the information thats being received
+
+                //TODO case on information and start game when a specific condition is met
+                if (true && gameId === null) {
+                    createAISeek()
+                }
+            })            
+        }
+    })
+
+    gpio_resign.watch((err, value) => {
+        if (err) {
+            throw err;
+        }
+
+        if (value === 1 && global.gameId !== null) {
+            // Once we resign game reset all values related to the game state
+            resignGame(global.gameId)
+
+            //Reseting game state values
+            global.gameId = null
+            global.FEN = null
+            global.moves = null
+            global.calibrating = false
+        }
+    })
+
+    gpio_confirm.watch((err, value) => {
+        if (err) {
+            throw err;
+        }
+
+        if (value === 1 && global.calibrating === true) {
+            console.log('confirm calibration')
         }
     })
 }
@@ -94,45 +132,3 @@ if (require.main === module) {
 	main();
 }
 module.exports = makeMove
-//const pyScript = spawn('python3', ['StockfishDemo.py', 'test']);
-
-/*pyScript.stdin.on('ready', () => {*/
-/*    console.log('ready')*/
-/*})*/
-/*
-pyScript.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
-});
-
-pyScript.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-});
-
-
-pyScript.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
-}); */
-
-//const rl = readline.createInterface({
-//    input: process.stdin,
-//    output: process.stdout,
-//})
-//
-//function ask(question) {
-//    rl.question(question, (answer) => {
-//        if(answer === "q") {
-//            process.exit(1)
-//        }
-//        rl.write(`The answer received:  ${answer}\n`)
-//        const pyScript = spawn('python3', ['StockfishDemo.py', 'test', answer])
-//        pyScript.stdout.on('data', (data) => {
-//             console.log(`stdout: ${data}`)
-//        })
-//        rl.close()
-//    })
-//}
-//
-//ask('what is your move?')
-
-
-

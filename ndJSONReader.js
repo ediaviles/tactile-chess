@@ -25,13 +25,13 @@ async function getInfoFromArduino() {
     arduinoCommunication.stdout.on('data', (data) => { //the data received should be an ndjson string
         const dataJSONstrs = data.trim().split('\n')
         const dataJSON = dataJSONstrs.map(dataJSONstr => {JSON.parse(dataJSONstr)}) //turn the data received into a json object
-        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', dataJSON.move])
+        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move])
         pythonProcess.stdout.on('data', (data) => {
             const dataString = data.toString().trim()
-            if (dataString !== "-1" && dataString !== gameState.fen) {
-                gameState.fen = dataString
-                gameState.moves.push(answer)
-                axios.post(`https://lichess.org/api/board/game/${gameState.gameId}/move/${answer}`, {},
+            if (dataString !== "-1" && dataString !== global.FEN) {
+                global.FEN = dataString
+                global.moves.push(answer)
+                axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${answer}`, {},
                     {
                         headers: headers,
                         method: 'POST',
@@ -56,16 +56,16 @@ async function ask(question) {
             process.exit(1)
         }
         rl.write(`The answer received:  ${answer}\n`)
-        console.log('this is the game fen before move: '+gameState.fen)
+        console.log('this is the game fen before move: '+global.FEN)
         console.log('this is the move to be played: ' + answer)
-        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', answer])
+        const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', answer])
         pythonProcess.stdout.on('data', (data) => {
             console.log('stdout: ' + data)
             const dataString = data.toString().trim()
-            if (dataString !== "-1" && dataString !== gameState.fen) {
-                gameState.fen = dataString
-                gameState.moves.push(answer)
-                axios.post(`https://lichess.org/api/board/game/${gameState.gameId}/move/${answer}`, {},
+            if (dataString !== "-1" && dataString !== global.FEN) {
+                global.FEN = dataString
+                global.moves.push(answer)
+                axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${answer}`, {},
                 {
                     headers: headers,
                     method: 'POST',
@@ -87,10 +87,10 @@ const eventController = async (data) => {
         case 'gameStart': {
             // once a game is started we want to open a new event stream to listen for chess moves being made
             //TODO
-            gameState.gameId = data.game.fullId
-            gameState.fen = data.game.fen
-            gameState.moves = []
-            fetchData('stream game', {gameId: gameState.gameId})
+            global.gameId = data.game.fullId
+            global.FEN = data.game.fen
+            global.moves = []
+            fetchData('stream game', {gameId: global.gameId})
             await ask('what is your move?')
             break;
         }
@@ -99,13 +99,13 @@ const eventController = async (data) => {
             if (moves !== '') {
                 moves = moves.split(' ')
                 lastMove = moves[moves.length - 1]
-                if (!gameState.moves.includes(lastMove)) {
-                    const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', gameState.fen, '-move', lastMove, '-update', 'True'])
+                if (!global.moves.includes(lastMove)) {
+                    const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', lastMove, '-update', 'True'])
                     pythonProcess.stdout.on('data', (data) => {
                         console.log('stdout: '+ data)
                         const dataString = data.toString().trim()
-                        if (dataString !== '-1' && dataString !== gameState.fen) {
-                            gameState.fen = dataString
+                        if (dataString !== '-1' && dataString !== global.FEN) {
+                            global.FEN = dataString
                         }
                     })
                     pythonProcess.on('close', (code) => {
@@ -181,7 +181,7 @@ const fetchData = async (command, props) => {
         case 'stream game': {
             //gameId = props.gameId
             //console.log(gameState)
-            let response = await axios.get(`https://lichess.org/api/board/game/stream/${gameState.gameId}`, {responseType:"stream", headers: headers}
+            let response = await axios.get(`https://lichess.org/api/board/game/stream/${global.gameId}`, {responseType:"stream", headers: headers}
             ).then((response)=>{
                 const stream = response.data.pipe(ndjson.parse());
 

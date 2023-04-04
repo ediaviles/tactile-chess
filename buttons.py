@@ -17,7 +17,6 @@ def button_startGame(channel):
 		
 		output = process.stdout.readline().decode('utf-8').strip()
 		print(output)
-	print(output.decode())
 
 def button_resignGame(channel):
 	print("Resign game button pressed")
