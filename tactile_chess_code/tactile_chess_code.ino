@@ -10,6 +10,9 @@ float BASE_VOLTAGES[2];
 int demo[3]; //sensors used for interim demo
 float demo_volt[3]; //voltage readings for interim demo sensors
 
+const byte BUFFER_SIZE = 50;
+char buffer[BUFFER_SIZE];
+
 const int DIGITAL_PIN_1 = 2;
 const int DIGITAL_PIN_2 = 3;
 const int DIGITAL_PIN_3 = 4;
@@ -66,51 +69,61 @@ void setup() {
 }
 
 void loop() {
-  //Calibration
-    float voltage1 = 0;
-    float voltage2 = 0;
-    float voltage3 = 0;
-    float min_voltage = 0;
-    float max_voltage = 0;
-    if(!scanned){
-      Serial.println("Scanned: ");
-      Serial.println(scanned);
-      
-      Serial.println("Callibration in progress... ");
-      voltage1 = measure_voltage(sensorPin1);
-      voltage2 = measure_voltage(sensorPin2);
-      voltage3 = measure_voltage(sensorPin3);
-      Serial.print("Voltage1: ");
-      Serial.println(voltage1);
-      Serial.print("Voltage2: ");
-      Serial.println(voltage2);
-      Serial.print("Voltage3: ");
-      Serial.println(voltage3);
-      scanned = true;
-      min_voltage = voltage1;
-      max_voltage = voltage1;
-      if(voltage2 < min_voltage){
-        min_voltage = voltage2;
+  
+  //Serial.println("Calibration Complete"); // print a message to the serial monitor
+  
+  float voltage1 = 0;
+  float voltage2 = 0;
+  float voltage3 = 0;
+  float min_voltage = 0;
+  float max_voltage = 0;
+  if(Serial.available() > 0){
+    int bytesRead = Serial.readBytesUntil('\n', buffer, BUFFER_SIZE);  // read bytes until newline character
+    buffer[bytesRead] = '\0';
+    Serial.println(buffer);
+    if(strcmp(buffer, "Start Calibration") == 0){
+      //calibration_check
+      if(!scanned){
+        Serial.println("Scanned: ");
+        Serial.println(scanned);
+        
+        Serial.println("Calibration in progress... ");
+        voltage1 = measure_voltage(sensorPin1);
+        voltage2 = measure_voltage(sensorPin2);
+        voltage3 = measure_voltage(sensorPin3);
+        Serial.print("Voltage1: ");
+        Serial.println(voltage1);
+        Serial.print("Voltage2: ");
+        Serial.println(voltage2);
+        Serial.print("Voltage3: ");
+        Serial.println(voltage3);
+        scanned = true;
+        min_voltage = voltage1;
+        max_voltage = voltage1;
+        if(voltage2 < min_voltage){
+          min_voltage = voltage2;
+        }
+        if(voltage3 < min_voltage){
+          min_voltage = voltage3;
+        }
+        if(voltage2 > max_voltage){
+          max_voltage = voltage2;
+        }
+        if(voltage3 > max_voltage){
+          max_voltage = voltage3;
+        }
+        Serial.print("Min Voltage: ");
+        Serial.println(min_voltage);
+        Serial.print("Max Voltage: ");
+        Serial.println(max_voltage);
+        Serial.println("Scanned: ");
+        Serial.println(scanned);
+        Serial.println();
+        BASE_VOLTAGES[0] = min_voltage - 0.01;
+        BASE_VOLTAGES[1] = max_voltage + 0.01;
       }
-      if(voltage3 < min_voltage){
-        min_voltage = voltage3;
-      }
-      if(voltage2 > max_voltage){
-        max_voltage = voltage2;
-      }
-      if(voltage3 > max_voltage){
-        max_voltage = voltage3;
-      }
-      Serial.print("Min Voltage: ");
-      Serial.println(min_voltage);
-      Serial.print("Max Voltage: ");
-      Serial.println(max_voltage);
-      Serial.println("Scanned: ");
-      Serial.println(scanned);
-      Serial.println();
-      BASE_VOLTAGES[0] = min_voltage - 0.01;
-      BASE_VOLTAGES[1] = max_voltage + 0.01;
     }
+  }
     else if(scanned && !calibration_done){
       buttonState = digitalRead(buttonPin); // read the state of the button
       if (buttonState == HIGH) { // if the button is pressed
@@ -122,7 +135,7 @@ void loop() {
     }
 
     //color_detection
-    else{
+    else if (calibration_done){
       for (int i = 0; i < 3; i++){
         float voltage = measure_voltage(demo[i]); // Measure voltage using the function from the voltage_measurement file
         demo_volt[i] = voltage;
@@ -141,6 +154,7 @@ void loop() {
             Serial.println("no piece detected");
           }
           
+          delay(1000); // debounce the button
         }
       }
     }

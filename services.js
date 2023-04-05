@@ -81,19 +81,23 @@ global.arduinoCommunication = null
 const listenForCalibration = (data) => {
                     const dataJSONstrs = data.toString().trim().split('\n')
                     const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
+                    console.log(dataJSON)
                     //console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
                         //console.log('Calibration is done, game seek has started')
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
+                        //global.arduinCommunication.kill()
+                        //global.arduinoCommunication = spawn('python3', ['serial_module.py'])
                         console.log('Game seek started')
                         createAISeek()
+                        
                     }
                 }
 
 function main() {
-    global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+    global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
     global.gameId = null
     global.gameFEN = null
     global.moves = null

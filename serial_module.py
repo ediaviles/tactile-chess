@@ -3,6 +3,7 @@ import time
 import json
 import subprocess
 import sys
+import argparse
 
 class CreateAction:
     def __init__(self):
@@ -86,7 +87,9 @@ class Arduino:
         action = CreateAction()
         while True:
             data_decoded = self.arduino.readline().decode().rstrip()
+            # print(data_decoded)
             if (data_decoded and data_decoded == 'Calibration Complete'):
+                # print(data_decoded)
                 action.isCalibrationDone = True
                 action.Send_Action()
             elif(data_decoded and self.Validate_Data(data_decoded)):
@@ -103,8 +106,9 @@ class Arduino:
                     pass
                     
             else:
-                message = f"Error in data received from arduino. Data received was {data_decoded}"
-                subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
+                pass
+                # message = f"Error in data received from arduino. Data received was {data_decoded}"
+                # subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
             sys.stdout.flush()
         return
     
@@ -136,9 +140,19 @@ class Arduino:
             return False
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Serial module to establish communication with arduino')
+    parser.add_argument('-startCalibration', metavar='C', type=bool, nargs='?', required=False,
+                        help='Calibrate the board')
+    args = parser.parse_args()
+    startCalibration = args.startCalibration
+    
     arduino = Arduino()
     time.sleep(0.1)
+    sys.stdout.flush()
     if arduino.arduino.isOpen():
+        if(startCalibration):
+            startCalibration = False
+            arduino.arduino.write("Start Calibration".encode('utf-8', errors='ignore'))
         #Get data and validate it
         arduino.establishSerialCommunication()
             
