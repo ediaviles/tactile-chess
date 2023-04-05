@@ -8,7 +8,7 @@ float measure_voltage(int pin) {
 
 
 void setup() {
-  Serial.begin(9600); // Initialize serial communication
+  Serial.begin(115200); // Initialize serial communication
 }
 
 void loop() {
