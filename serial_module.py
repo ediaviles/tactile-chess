@@ -82,7 +82,7 @@ class CreateAction:
 
 class Arduino:
     def __init__(self):
-        self.arduino = serial.Serial(port='/dev/ttyACM1', baudrate=9600)
+        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
         self.pieces = set({"P", "R", "N", "B", "Q", "K"
                            "p", "r", "n", "b", "q", "k"})
 

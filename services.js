@@ -90,8 +90,7 @@ const listenForCalibration = (data) => {
                         global.maxVoltage = dataJSON.actionResult.split(" ")[1]
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
-                        global.arduinoCommunication.kill('SIGKILL')
-                        global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+                        global.arduinoCommunication.stdout.on('data', listenForGameStart)
                         const message = "GAME_START:Please arrange the board to the starting position, and press the confirm button to begin game"
                         const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
                         //console.log('Game seek started')
@@ -103,21 +102,20 @@ const listenForCalibration = (data) => {
 const listenForGameStart = (data) => {
                     const dataJSONstrs = data.toString().trim().split('\n')
                     const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-                    console.log("entered")
                     //console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && 
                         dataJSON.hasOwnProperty("actionType") && dataJSON.actionType === "Begin Game" &&
                         global.gameId === null && global.isCalibrationDone === true) {
-                        
                         console.log('game seek has started')
                         global.arduinoCommunication.stdout.off('data', listenForGameStart)
+                        global.arduinoCommunication.kill('SIGKILL')
+                        global.arduinoCommunication = spawn('python3', ['serial_module.py'])
                         const message = "MKE_MVE:Please make your move"
                         const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
                         console.log('Game seek started')
                         createAISeek()
                     }
-                    console.log("exited")
                 }
 
 function main() {
@@ -141,7 +139,6 @@ function main() {
             global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             console.log("Button pressed")
             global.arduinoCommunication.stdout.on('data', listenForCalibration)
-            global.arduinoCommunication.stdout.on('data', listenForGameStart)
         }
     })
 
