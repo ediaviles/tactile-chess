@@ -6,9 +6,10 @@ import sys
 import argparse
 
 class CreateAction:
-    def __init__(self):
-        self.reset()
+    def __init__(self, startCalibration: bool):
         self.prevMessage = None
+        self.isCalibrationDone = not startCalibration
+        self.reset()
         
     def reset(self):
         self.data = [] #A list of tuples. First element is piece. Second element is coordinate
@@ -16,7 +17,7 @@ class CreateAction:
         self.actionType = ''
         self.actionResult = ''
         self.move = ''
-        self.isCalibrationDone = False
+        self.isCalibrationDone = self.isCalibrationDone
         
     def to_dict(self):
         return {
@@ -73,21 +74,24 @@ class CreateAction:
         for key, value in self.to_dict().items():
             ndjson_data += json.dumps({key: value}) + "\n"
         sys.stdout.flush()
+        #TODO: Reset after sending data to ensure all fuields go back to null?
+        self.reset()
         print(ndjson_data)
 
 
 
 class Arduino:
     def __init__(self):
-        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
+        self.arduino = serial.Serial(port='/dev/ttyACM1', baudrate=9600)
         self.pieces = set({"P", "R", "N", "B", "Q", "K"
                            "p", "r", "n", "b", "q", "k"})
 
     def establishSerialCommunication(self, startCalibration):
-        action = CreateAction()
+        action = CreateAction(startCalibration)
         while True:
             data_decoded = ""
             if(startCalibration):
+                action.isCalibrationDone = False
                 # print(self.arduino.in_waiting)
                 while self.arduino.in_waiting == 0:
                     self.arduino.write("Start Calibration".encode('utf-8'))
@@ -99,6 +103,14 @@ class Arduino:
                 action.actionResult = data_decoded.split(":")[-1] # Send min and max voltage as a space divided string
                 action.isCalibrationDone = True
                 startCalibration = False
+                action.Send_Action()
+                # while self.arduino.in_waiting == 0:
+                    # self.arduino.write("Wait for Begin Game".encode('utf-8'))
+                    # time.sleep(2.5)
+            elif(data_decoded and data_decoded.startswith('Begin Game')):
+                # print(data_decoded)
+                action.actionType = "Begin Game"
+                action.isCalibrationDone = True
                 action.Send_Action()
             elif(data_decoded and self.Validate_Data(data_decoded)):
                 #print(data_decoded)
@@ -153,6 +165,9 @@ if __name__ == '__main__':
                         help='Calibrate the board')
     args = parser.parse_args()
     startCalibration = args.startCalibration
+    if(startCalibration):
+        message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
+        subprocess.Popen(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
     
     arduino = Arduino()
     time.sleep(0.1)

@@ -41,8 +41,13 @@ class Text_to_Speech_Engine(object):
 	def Vocalize(self, text: str):
 	
 		msg, msg_info = text.split(":")[0], text.split(":")[1]
-		piece, move = self.Find_Piece_Type(msg_info.split(" ")[0]), msg_info.split(" ")[1]
-		src, dst = move[:2], move[2:]
+		try:
+			piece, move = self.Find_Piece_Type(msg_info.split(" ")[0]), msg_info.split(" ")[1]
+			src, dst = move[:2], move[2:]
+		except:
+			pass
+			
+		
 		if(text.startswith("ERROR")):
 			message = f"The move {move} is invalid. Please move the {piece} back from {dst} to {src}."
 			
@@ -52,7 +57,8 @@ class Text_to_Speech_Engine(object):
 		elif(text.startswith("USR")):
 			message = f"Your move is valid! Please wait for opponent's move."
 			
-				
+		else:
+			message = msg_info
 		
 		self.engine.say(message)
 		self.engine.runAndWait()

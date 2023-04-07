@@ -27,6 +27,7 @@ int board[8][8];
 
 bool scanned = false; //boolean to see if board has been scanned and callibrated
 bool calibration_done = false; //boolean to check if board has been calibrated
+bool game_started = false; //boolean to check if board has been calibrated
 
 //const float BASE_VOLTAGE = 2.5; // Base voltage value in Volts
 
@@ -75,7 +76,7 @@ void loop() {
   float voltage3 = 0;
   float min_voltage = 0;
   float max_voltage = 0;
-  buffer = Serial.readStringUntil('\n');
+  buffer = Serial.readStringUntil('\n'); //Sends 'Start Calibration' message over
 //  while (Serial.available() > 0) {
 //      char incomingByte = Serial.read();
 //      buffer += incomingByte;
@@ -85,60 +86,71 @@ void loop() {
   if(buffer == "Start Calibration"){
     scanned = false;
     calibration_done = false;
+    game_started = false;
     //calibration_check
-    if(!scanned){
-      Serial.println("Scanned: ");
-      Serial.println(scanned);
-      
-      Serial.println("Calibration in progress... ");
-      voltage1 = measure_voltage(sensorPin1);
-      voltage2 = measure_voltage(sensorPin2);
-      voltage3 = measure_voltage(sensorPin3);
-      Serial.print("Voltage1: ");
-      Serial.println(voltage1);
-      Serial.print("Voltage2: ");
-      Serial.println(voltage2);
-      Serial.print("Voltage3: ");
-      Serial.println(voltage3);
-      scanned = true;
-      min_voltage = voltage1;
-      max_voltage = voltage1;
-      if(voltage2 < min_voltage){
-        min_voltage = voltage2;
-      }
-      if(voltage3 < min_voltage){
-        min_voltage = voltage3;
-      }
-      if(voltage2 > max_voltage){
-        max_voltage = voltage2;
-      }
-      if(voltage3 > max_voltage){
-        max_voltage = voltage3;
-      }
-      BASE_VOLTAGES[0] = min_voltage - 0.01;
-      BASE_VOLTAGES[1] = max_voltage + 0.01;
-      Serial.print("Min Voltage: ");
-      Serial.println(BASE_VOLTAGES[0]);
-      Serial.print("Max Voltage: ");
-      Serial.println(BASE_VOLTAGES[1]);
-      Serial.print("Calibration Complete:"); // print a message to the serial monitor
-      Serial.print(BASE_VOLTAGES[0]);
-      Serial.print(" ");
-      Serial.print(BASE_VOLTAGES[1]);
-      Serial.println();
-    }
-  }
-  else if(scanned && !calibration_done){
     buttonState = digitalRead(buttonPin); // read the state of the button
     if (buttonState == HIGH) { // if the button is pressed
-      calibration_done = true;
-      delay(1000); // debounce the button
+      if(!scanned){
+        Serial.println("Scanned: ");
+        Serial.println(scanned);
+        
+        Serial.println("Calibration in progress... ");
+        voltage1 = measure_voltage(sensorPin1);
+        voltage2 = measure_voltage(sensorPin2);
+        voltage3 = measure_voltage(sensorPin3);
+        Serial.print("Voltage1: ");
+        Serial.println(voltage1);
+        Serial.print("Voltage2: ");
+        Serial.println(voltage2);
+        Serial.print("Voltage3: ");
+        Serial.println(voltage3);
+        scanned = true;
+        calibration_done = true;
+        min_voltage = voltage1;
+        max_voltage = voltage1;
+        if(voltage2 < min_voltage){
+          min_voltage = voltage2;
+        }
+        if(voltage3 < min_voltage){
+          min_voltage = voltage3;
+        }
+        if(voltage2 > max_voltage){
+          max_voltage = voltage2;
+        }
+        if(voltage3 > max_voltage){
+          max_voltage = voltage3;
+        }
+        BASE_VOLTAGES[0] = min_voltage - 0.01;
+        BASE_VOLTAGES[1] = max_voltage + 0.01;
+        Serial.print("Min Voltage: ");
+        Serial.println(BASE_VOLTAGES[0]);
+        Serial.print("Max Voltage: ");
+        Serial.println(BASE_VOLTAGES[1]);
+        Serial.print("Calibration Complete:"); // print a message to the serial monitor
+        Serial.print(BASE_VOLTAGES[0]);
+        Serial.print(" ");
+        Serial.print(BASE_VOLTAGES[1]);
+        Serial.println();
+        delay(1000);
+      }
     }
-    
+      
   }
 
+//  else if(buffer == "Wait for Begin Game"){
+//    calibration_done = true;
+//  }
+  
+  if(calibration_done && !game_started){
+    buttonState = digitalRead(buttonPin); // read the state of the button
+    if (buttonState == HIGH) { // if the button is pressed
+      Serial.println("Begin Game");
+      game_started = true;
+      delay(1000);
+    }
+  }
   //color_detection
-  else if (calibration_done){
+  else if (game_started){
     for (int i = 0; i < 3; i++){
       float voltage = measure_voltage(demo[i]); // Measure voltage using the function from the voltage_measurement file
       demo_volt[i] = voltage;
