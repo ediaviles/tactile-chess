@@ -79,21 +79,29 @@ class CreateAction:
 
 class Arduino:
     def __init__(self):
-        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
+        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
         self.pieces = set({"P", "R", "N", "B", "Q", "K"
                            "p", "r", "n", "b", "q", "k"})
 
-    def establishSerialCommunication(self):
+    def establishSerialCommunication(self, startCalibration):
         action = CreateAction()
         while True:
-            data_decoded = self.arduino.readline().decode().rstrip()
-            # print(data_decoded)
-            if (data_decoded and data_decoded == 'Calibration Complete'):
+            data_decoded = ""
+            if(startCalibration):
+                # print(self.arduino.in_waiting)
+                while self.arduino.in_waiting == 0:
+                    self.arduino.write("Start Calibration".encode('utf-8'))
+                    time.sleep(2.5)
+            if (self.arduino.in_waiting > 0):
+                data_decoded = self.arduino.readline().decode().rstrip()
+            if (data_decoded and data_decoded.startswith() == 'Calibration Complete'):
                 # print(data_decoded)
+                action.actionResult = data_decoded.split(":")[-1] # Send min and max voltage as a space divided string
                 action.isCalibrationDone = True
+                startCalibration = False
                 action.Send_Action()
             elif(data_decoded and self.Validate_Data(data_decoded)):
-                print(data_decoded)
+                #print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
                 if((piece, coordinate) in action.data): #Piece is lifted and placed down
                     action.data.remove((piece, coordinate))
@@ -150,9 +158,6 @@ if __name__ == '__main__':
     time.sleep(0.1)
     sys.stdout.flush()
     if arduino.arduino.isOpen():
-        if(startCalibration):
-            startCalibration = False
-            arduino.arduino.write("Start Calibration".encode('utf-8', errors='ignore'))
         #Get data and validate it
-        arduino.establishSerialCommunication()
+        arduino.establishSerialCommunication(startCalibration)
             

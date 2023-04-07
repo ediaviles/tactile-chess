@@ -95,7 +95,7 @@ const eventController = async (data) => {
             if (moves !== '') {
                 moves = moves.split(' ')
                 lastMove = moves[moves.length - 1]
-                if (!global.moves.includes(lastMove)) {
+                if (global.moves !== null && !global.moves.includes(lastMove)) {
                     const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', lastMove, '-update', 'True'])
                     pythonProcess.stdout.on('data', (data) => {
                         //console.log('stdout: '+ data)
@@ -134,6 +134,7 @@ const eventController = async (data) => {
     }
 }
 
+
 const fetchData = async (command, props) => {
     const streamEmitter = new EventEmitter()
     switch (command) {
@@ -151,6 +152,7 @@ const fetchData = async (command, props) => {
                 // Listen for the 'end' event and emit it on the streamEmitter instance
                 stream.on('end', () => {
                     streamEmitter.emit('end');
+                    stream.destroy();
                 });
             }).catch((error) => {
                     console.error(error);
@@ -177,6 +179,7 @@ const fetchData = async (command, props) => {
                 // Listen for the 'end' event and emit it on the streamEmitter instance
                 stream.on('end', () => {
                     streamEmitter.emit('end');
+                    stream.destroy()
                 });
             }).catch((error) => {
                 console.error(error);
@@ -194,7 +197,7 @@ const fetchData = async (command, props) => {
     });
 
     streamEmitter.on('end', () => {
-        console.log('Stream ended');
+        streamEmitter.removeAllListeners()
     });
     /*const reader = response.body.getReader();
     let decoder = new TextDecoder('utf-8');

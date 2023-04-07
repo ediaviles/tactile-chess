@@ -85,11 +85,11 @@ const listenForCalibration = (data) => {
                     //console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
-                        //console.log('Calibration is done, game seek has started')
+                        console.log('Calibration is done, game seek has started')
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
-                        //global.arduinCommunication.kill()
-                        //global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+                        global.arduinoCommunication.kill('SIGKILL')
+                        global.arduinoCommunication = spawn('python3', ['serial_module.py'])
                         console.log('Game seek started')
                         createAISeek()
                         
@@ -97,7 +97,6 @@ const listenForCalibration = (data) => {
                 }
 
 function main() {
-    global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
     global.gameId = null
     global.gameFEN = null
     global.moves = null
@@ -111,6 +110,11 @@ function main() {
             // calibration mode which calls the audio module
             // waits for confirm
             // once confirm is pressed the arduino runs
+            if (global.arduinoCommunication != null) {
+                global.isCalibrationDone = false;
+                global.arduinoCommunication.kill('SIGKILL');
+            }
+            global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             console.log("Button pressed")
             global.arduinoCommunication.stdout.on('data', listenForCalibration)
         }
@@ -120,7 +124,6 @@ function main() {
         if (err) {
             throw err;
         }
-
         if (value === 1 && global.gameId !== null) {
             console.log('Game resigned')
             // Once we resign game reset all values related to the game state
