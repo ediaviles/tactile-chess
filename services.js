@@ -86,6 +86,8 @@ const listenForCalibration = (data) => {
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
                         console.log('Calibration is done, game seek has started')
+                        global.minVoltage = dataJSON.actionResult.split(" ")[0]
+                        global.maxVoltage = dataJSON.actionResult.split(" ")[1]
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
                         global.arduinoCommunication.kill('SIGKILL')

@@ -94,7 +94,7 @@ class Arduino:
                     time.sleep(2.5)
             if (self.arduino.in_waiting > 0):
                 data_decoded = self.arduino.readline().decode().rstrip()
-            if (data_decoded and data_decoded.startswith() == 'Calibration Complete'):
+            if (data_decoded and data_decoded.startswith('Calibration Complete')):
                 # print(data_decoded)
                 action.actionResult = data_decoded.split(":")[-1] # Send min and max voltage as a space divided string
                 action.isCalibrationDone = True
