@@ -69,6 +69,7 @@ const makeMove = (gameId, move) => {
 
 const GPIO_PIN_START = 17;
 const GPIO_PIN_RESIGN = 16;
+const GPIO_PIN_RESIGN = 27; //confirm button
 const gpio_start = new Gpio(GPIO_PIN_START, 'in', 'both')
 const gpio_resign = new Gpio(GPIO_PIN_RESIGN, 'in', 'both')
 
@@ -107,10 +108,7 @@ const listenForGameStart = (data) => {
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && 
                         dataJSON.hasOwnProperty("actionType") && dataJSON.actionType === "Begin Game" &&
                         global.gameId === null && global.isCalibrationDone === true) {
-                        console.log('game seek has started')
                         global.arduinoCommunication.stdout.off('data', listenForGameStart)
-                        global.arduinoCommunication.kill('SIGKILL')
-                        global.arduinoCommunication = spawn('python3', ['serial_module.py'])
                         const message = "MKE_MVE:Please make your move"
                         const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
                         console.log('Game seek started')

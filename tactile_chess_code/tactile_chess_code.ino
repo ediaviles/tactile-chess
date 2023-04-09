@@ -136,6 +136,12 @@ void loop() {
     }
       
   }
+  else {
+    Serial.println("pe2");
+    delay(1000);
+    Serial.println("pe4");
+    delay(1000);  
+  }
 
 //  else if(buffer == "Wait for Begin Game"){
 //    calibration_done = true;

@@ -20,10 +20,12 @@ const rl = readline.createInterface({
     output: process.stdout,
 })
 
-const prevData = null
+let prevData = null
 
 const validatePythonProcess = (data) => {
         const dataString = data.toString().trim()
+        console.log("in validatepythonprocess")
+        console.log(dataString)
         if (dataString !== "-1" && dataString !== global.FEN) {
             global.FEN = dataString
             global.moves.push(dataJSON.move)
@@ -35,15 +37,19 @@ const validatePythonProcess = (data) => {
 const handleArduinoMoveInfo = (data) => {
         const dataJSONstrs = data.toString().trim().split('\n')
         const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-        if (dataJSON !== prevData) {
+        
+        //console.log(dataJSON)
+        if (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData)) {
             prevData = dataJSON
-            const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move])
-            pythonProcess.stdout.on('data', validatePython)
+            console.log(global.FEN, dataJSON.move.slice(1, -1))
+            const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move.slice(1, -1)])
+            pythonProcess.stdout.on('data', validatePythonProcess)
         }
     }
 
 function getInfoFromArduino() {
-    global.arduinoCommunication.on('data', handleArduinoMoveInfo)
+    console.log("in get info from arduino")
+    global.arduinoCommunication.stdout.on('data', handleArduinoMoveInfo)
 }
 
 async function ask(question) {
@@ -78,7 +84,7 @@ async function ask(question) {
 }
 
 
-const eventController = async (data) => {
+const eventController = (data) => {
     switch(data.type) {
         case 'gameStart': {
             // once a game is started we want to open a new event stream to listen for chess moves being made
@@ -87,7 +93,8 @@ const eventController = async (data) => {
             global.FEN = data.game.fen
             global.moves = []
             fetchData('stream game', {gameId: global.gameId})
-            await ask('what is your move?')
+            //await ask('what is your move?')
+            getInfoFromArduino()
             break;
         }
         case 'gameState': {
@@ -106,7 +113,8 @@ const eventController = async (data) => {
                     })
                     pythonProcess.on('close', (code) => {
                         //console.log('child process exited opponent move')
-                        ask('what is your move?')
+                        //ask('what is your move?')
+                        getInfoFromArduino()
                     }); 
                 }
             }
@@ -199,70 +207,6 @@ const fetchData = async (command, props) => {
     streamEmitter.on('end', () => {
         streamEmitter.removeAllListeners()
     });
-    /*const reader = response.body.getReader();
-    let decoder = new TextDecoder('utf-8');
-    let partialData = '';
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-            break;
-        }
-
-        partialData += decoder.decode(value);
-
-        // Split the partial data on newlines to separate NDJSON messages
-        const messages = partialData.split('\n');
-
-        // Keep the last incomplete message for the next iteration
-        partialData = messages.pop();
-
-        // Parse and add the complete messages to the component state
-        for (const message of messages) {
-            try {
-                const newData = JSON.parse(message);
-                console.log(newData)
-                //TODO if we already started a game
-                if (gameId !== null && turn === 'w') { // if we started a game and its users turn
-                    console.log("starting subprocess")
-                    const pythonProcess = spawnSync('python3', ['StockfishDemo.py', 'Get_Move_From_User', fen])
-                    console.log(pythonProcess)
-                }
-                /!*if ("type" in newData && newData.type === "gameFull") {
-                    //TODO if we see a gameFull update our liveState
-                    //first get array of moves
-                    const movesMade = newData.state.moves.split(" ");
-                    if (movesMade[0] !== '') {
-                        for (let i = 0; i < movesMade.length; i++) {
-                            chess.move(movesMade[i])
-                        }
-                        //data.setMovesMade(movesMade)
-                        //data.setMovesIndex(movesMade.length)
-                        movesMadeArr = movesMade
-                        movesIndex = movesMade.length
-                    } else {
-                        //data.setMovesMade([])
-                        //data.setMovesIndex(0)
-                    }
-                    fen = chess.fen(); // this is our live fen
-                }
-                else if ("type" in newData && newData.type === "gameState") {
-                    //TODO update our moves made
-                    const movesMade = newData.state.moves.split(" ")
-                    //data.setMovesMade(newData.moves.split(" "))
-                    for (let i = movesIndex; i < movesMade.length; i++) {
-                        chess.move(movesMade[i])
-                    }
-                    movesMadeArr = movesMade;
-                    movesIndex = movesMade.length;
-                    fen = chess.fen();
-                }
-                console.log(fen)*!/
-                await eventController(newData)
-            } catch (error) {
-                console.error(error);
-            }*//*
-        }
-    }*/
 };
 
 module.exports = fetchData;

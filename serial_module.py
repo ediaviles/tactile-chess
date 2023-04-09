@@ -48,13 +48,13 @@ class CreateAction:
                     self.move = resPiece + coorInfo
                     self.actionResult = currPiece + currCoor
                     break
-                elif(len(data) == 3):
+                elif(len(self.data) == 3):
                     self.actionType = "Capture"
                     self.move = piece + pieces.pop(piece)[1] + coordinate
                     resPiece, coor_info = next(iter(my_dict.items()))
                     self.actionResult = resPiece + coor_info[1]
                     break
-                elif(len(data) == 2):
+                elif(len(self.data) == 2):
                     self.actionType = "Move"
                     self.move = piece + pieces.pop(piece)[1] + coordinate
                     self.actionResult = ''
@@ -83,7 +83,7 @@ class CreateAction:
 class Arduino:
     def __init__(self):
         self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
-        self.pieces = set({"P", "R", "N", "B", "Q", "K"
+        self.pieces = set({"P", "R", "N", "B", "Q", "K",
                            "p", "r", "n", "b", "q", "k"})
 
     def establishSerialCommunication(self, startCalibration):
@@ -98,7 +98,7 @@ class Arduino:
                     time.sleep(2.5)
             if (self.arduino.in_waiting > 0):
                 data_decoded = self.arduino.readline().decode().rstrip()
-            if (data_decoded and data_decoded.startswith('Calibration Complete')):
+            if (data_decoded != "" and data_decoded.startswith('Calibration Complete')):
                 # print(data_decoded)
                 action.actionResult = data_decoded.split(":")[-1] # Send min and max voltage as a space divided string
                 action.isCalibrationDone = True
@@ -107,12 +107,12 @@ class Arduino:
                 # while self.arduino.in_waiting == 0:
                     # self.arduino.write("Wait for Begin Game".encode('utf-8'))
                     # time.sleep(2.5)
-            elif(data_decoded and data_decoded.startswith('Begin Game')):
+            elif(data_decoded != "" and data_decoded.startswith('Begin Game')):
                 # print(data_decoded)
                 action.actionType = "Begin Game"
                 action.isCalibrationDone = True
                 action.Send_Action()
-            elif(data_decoded and self.Validate_Data(data_decoded)):
+            elif(data_decoded != "" and self.Validate_Data(data_decoded)):
                 #print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
                 if((piece, coordinate) in action.data): #Piece is lifted and placed down
@@ -149,7 +149,7 @@ class Arduino:
                 message = f"Second character must be a letter for the column coordinate. Data received was {data_decoded}"
                 subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
                 return False
-            if(not data_decoded[2].isnum()):
+            if(not data_decoded[2].isnumeric()):
                 message = f"Third character must be a number for the row coordinate. Data received was {data_decoded}"
                 subprocess.Popen(['python3', 'logger.py', '-text', message, "-filename", "error.log"])
                 return False
