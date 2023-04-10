@@ -83,7 +83,8 @@ global.arduinoCommunication = null
 const listenForCalibration = (data) => {
                     const dataJSONstrs = data.toString().trim().split('\n')
                     const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-                    //console.log(dataJSON)
+                    console.log("listenForCalibration dataJSON: ")
+                    console.log(dataJSON)
                     //console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
@@ -106,7 +107,8 @@ const listenForCalibration = (data) => {
 const listenForGameStart = (data) => {
                     const dataJSONstrs = data.toString().trim().split('\n')
                     const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-                    //console.log(dataJSON) // this should be the information thats being received
+                    console.log("listenForGameStart dataJSON: ")
+                    console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && 
                         dataJSON.hasOwnProperty("actionType") && dataJSON.actionType === "Begin Game" &&
@@ -122,11 +124,13 @@ const listenForGameStart = (data) => {
 const confirmAction = (action) => {
     switch(action) {
         case "calibrationStart":
+            console.log("in calibration start case")
             global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             global.arduinoCommunication.stdout.on('data', listenForCalibration)
             global.isConfirmState = false
             break;
         case "boardSetup":
+            console.log("in board setup confirmation case")
             global.arduinoCommunication.stdout.on('data', listenForGameStart)
             global.isConfirmState = false
             break;
@@ -144,6 +148,7 @@ function main() {
     global.isCalibrationDone = false
     global.isConfirmState = false
     global.action = ""
+    global.arduinoCommunication = null
     
     gpio_start.watch((err, value) => {
         if (err) {
@@ -153,7 +158,7 @@ function main() {
             // calibration mode which calls the audio module
             // waits for confirm
             // once confirm is pressed the arduino runs
-            if (global.arduinoCommunication != null) {
+            if (global.arduinoCommunication !== null) {
                 global.isCalibrationDone = false;
                 global.arduinoCommunication.kill('SIGKILL');
             }
@@ -190,6 +195,7 @@ function main() {
             throw err;
         }
         if (value === 1 && global.isConfirmState === true) {
+            console.log("in confirm button press")
             confirmAction(global.action)
         }
     })
