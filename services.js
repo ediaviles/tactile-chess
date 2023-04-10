@@ -117,6 +117,7 @@ const listenForGameStart = (data) => {
                         const message = "MKE_MVE:Please make your move"
                         const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
                         console.log('Game seek started')
+                        global.arduinoCommunication.kill('SIGTERM')
                         createAISeek()
                     }
                 }
@@ -160,7 +161,7 @@ function main() {
             // once confirm is pressed the arduino runs
             if (global.arduinoCommunication !== null) {
                 global.isCalibrationDone = false;
-                global.arduinoCommunication.kill('SIGKILL');
+                global.arduinoCommunication.kill('SIGTERM');
             }
             //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             //spawn audio instead to start calibration state

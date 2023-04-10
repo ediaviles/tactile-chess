@@ -75,7 +75,7 @@ class CreateAction:
             ndjson_data += json.dumps({key: value}) + "\n"
         sys.stdout.flush()
         #TODO: Reset after sending data to ensure all fuields go back to null?
-        self.reset()
+        #self.reset()
         print(ndjson_data)
 
 
@@ -112,7 +112,9 @@ class Arduino:
                 # print(data_decoded)
                 action.actionType = "Begin Game"
                 action.isCalibrationDone = True
-                action.Send_Action()
+                while True:
+                    action.Send_Action()
+                    time.sleep(2.5)
             elif(data_decoded != "" and self.Validate_Data(data_decoded)):
                 #print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]

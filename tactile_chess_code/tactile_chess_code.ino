@@ -152,7 +152,7 @@ void loop() {
     }
   }
   //color_detection
-  else if (game_started){
+  else if (game_started && false){
     for (int i = 0; i < 3; i++){
       float voltage = measure_voltage(demo[i]); // Measure voltage using the function from the voltage_measurement file
       demo_volt[i] = voltage;
