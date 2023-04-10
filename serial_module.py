@@ -96,6 +96,7 @@ class Arduino:
                 while self.arduino.in_waiting == 0:
                     self.arduino.write("Start Calibration".encode('utf-8'))
                     time.sleep(2.5)
+            
             if (self.arduino.in_waiting > 0):
                 data_decoded = self.arduino.readline().decode().rstrip()
             if (data_decoded != "" and data_decoded.startswith('Calibration Complete')):

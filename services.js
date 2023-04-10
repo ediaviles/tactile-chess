@@ -69,9 +69,10 @@ const makeMove = (gameId, move) => {
 
 const GPIO_PIN_START = 17;
 const GPIO_PIN_RESIGN = 16;
-const GPIO_PIN_RESIGN = 27; //confirm button
+const GPIO_PIN_CONFIRM = 27; //confirm button
 const gpio_start = new Gpio(GPIO_PIN_START, 'in', 'both')
 const gpio_resign = new Gpio(GPIO_PIN_RESIGN, 'in', 'both')
+const gpio_confirm = new Gpio(GPIO_PIN_CONFIRM, 'in', 'both')
 
 global.gameId = null
 global.gameFEN = null
@@ -87,13 +88,15 @@ const listenForCalibration = (data) => {
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
                         console.log('Calibration is done')
+                        global.isConfirmState = true
+                        global.action = "boardSetup"
                         global.minVoltage = dataJSON.actionResult.split(" ")[0]
                         global.maxVoltage = dataJSON.actionResult.split(" ")[1]
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
-                        global.arduinoCommunication.stdout.on('data', listenForGameStart)
                         const message = "GAME_START:Please arrange the board to the starting position, and press the confirm button to begin game"
                         const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+
                         //console.log('Game seek started')
                         //createAISeek()
                         
@@ -116,11 +119,31 @@ const listenForGameStart = (data) => {
                     }
                 }
 
+const confirmAction = (action) => {
+    switch(action) {
+        case "calibrationStart":
+            global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
+            global.arduinoCommunication.stdout.on('data', listenForCalibration)
+            global.isConfirmState = false
+            break;
+        case "boardSetup":
+            global.arduinoCommunication.stdout.on('data', listenForGameStart)
+            global.isConfirmState = false
+            break;
+        case "resign":
+            break;
+        default:
+            console.log("no action to confirm")
+    }
+}
+
 function main() {
     global.gameId = null
     global.gameFEN = null
     global.moves = null
     global.isCalibrationDone = false
+    global.isConfirmState = false
+    global.action = ""
     
     gpio_start.watch((err, value) => {
         if (err) {
@@ -134,9 +157,14 @@ function main() {
                 global.isCalibrationDone = false;
                 global.arduinoCommunication.kill('SIGKILL');
             }
-            global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
-            console.log("Button pressed")
-            global.arduinoCommunication.stdout.on('data', listenForCalibration)
+            //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
+            //spawn audio instead to start calibration state
+            const message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
+            const audioModule = spawn('python3', ['audio_module.py', '-text', message]) // notify the user we're moving to calibration step and to hit confirm
+            global.isConfirmState = true
+            global.action = "calibrationStart"
+            console.log("start game button pressed")
+            //global.arduinoCommunication.stdout.on('data', listenForCalibration)
         }
     })
 
@@ -154,6 +182,15 @@ function main() {
             global.FEN = null
             global.moves = null
             global.isCalibrationDone = false
+        }
+    })
+
+    gpio_confirm.watch((err, value) => {
+        if (err) {
+            throw err;
+        }
+        if (value === 1 && global.isConfirmState === true) {
+            confirmAction(global.action)
         }
     })
 }
