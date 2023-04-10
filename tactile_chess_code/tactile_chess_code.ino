@@ -88,60 +88,56 @@ void loop() {
     calibration_done = false;
     game_started = false;
     //calibration_check
-    buttonState = digitalRead(buttonPin); // read the state of the button
-    if (buttonState == HIGH) { // if the button is pressed
-      if(!scanned){
-        Serial.println("Scanned: ");
-        Serial.println(scanned);
-        
-        Serial.println("Calibration in progress... ");
-        voltage1 = measure_voltage(sensorPin1);
-        voltage2 = measure_voltage(sensorPin2);
-        voltage3 = measure_voltage(sensorPin3);
-        Serial.print("Voltage1: ");
-        Serial.println(voltage1);
-        Serial.print("Voltage2: ");
-        Serial.println(voltage2);
-        Serial.print("Voltage3: ");
-        Serial.println(voltage3);
-        scanned = true;
-        calibration_done = true;
-        min_voltage = voltage1;
-        max_voltage = voltage1;
-        if(voltage2 < min_voltage){
-          min_voltage = voltage2;
-        }
-        if(voltage3 < min_voltage){
-          min_voltage = voltage3;
-        }
-        if(voltage2 > max_voltage){
-          max_voltage = voltage2;
-        }
-        if(voltage3 > max_voltage){
-          max_voltage = voltage3;
-        }
-        BASE_VOLTAGES[0] = min_voltage - 0.01;
-        BASE_VOLTAGES[1] = max_voltage + 0.01;
-        Serial.print("Min Voltage: ");
-        Serial.println(BASE_VOLTAGES[0]);
-        Serial.print("Max Voltage: ");
-        Serial.println(BASE_VOLTAGES[1]);
-        Serial.print("Calibration Complete:"); // print a message to the serial monitor
-        Serial.print(BASE_VOLTAGES[0]);
-        Serial.print(" ");
-        Serial.print(BASE_VOLTAGES[1]);
-        Serial.println();
-        delay(1000);
-      }
-    }
+    if(!scanned){
+      Serial.println("Scanned: ");
+      Serial.println(scanned);
       
+      Serial.println("Calibration in progress... ");
+      voltage1 = measure_voltage(sensorPin1);
+      voltage2 = measure_voltage(sensorPin2);
+      voltage3 = measure_voltage(sensorPin3);
+      Serial.print("Voltage1: ");
+      Serial.println(voltage1);
+      Serial.print("Voltage2: ");
+      Serial.println(voltage2);
+      Serial.print("Voltage3: ");
+      Serial.println(voltage3);
+      scanned = true;
+      calibration_done = true;
+      min_voltage = voltage1;
+      max_voltage = voltage1;
+      if(voltage2 < min_voltage){
+        min_voltage = voltage2;
+      }
+      if(voltage3 < min_voltage){
+        min_voltage = voltage3;
+      }
+      if(voltage2 > max_voltage){
+        max_voltage = voltage2;
+      }
+      if(voltage3 > max_voltage){
+        max_voltage = voltage3;
+      }
+      BASE_VOLTAGES[0] = min_voltage - 0.01;
+      BASE_VOLTAGES[1] = max_voltage + 0.01;
+      Serial.print("Min Voltage: ");
+      Serial.println(BASE_VOLTAGES[0]);
+      Serial.print("Max Voltage: ");
+      Serial.println(BASE_VOLTAGES[1]);
+      Serial.print("Calibration Complete:"); // print a message to the serial monitor
+      Serial.print(BASE_VOLTAGES[0]);
+      Serial.print(" ");
+      Serial.print(BASE_VOLTAGES[1]);
+      Serial.println();
+      delay(1000);
+    }
   }
-  else {
-    Serial.println("pe2");
-    delay(1000);
-    Serial.println("pe4");
-    delay(1000);  
-  }
+//  else {
+//    Serial.println("pe2");
+//    delay(1000);
+//    Serial.println("pe4");
+//    delay(1000);  
+//  }
 
 //  else if(buffer == "Wait for Begin Game"){
 //    calibration_done = true;

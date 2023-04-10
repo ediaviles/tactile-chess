@@ -89,8 +89,8 @@ const listenForCalibration = (data) => {
                     //TODO case on information and start game when a specific condition is met
                     if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
                         console.log('Calibration is done')
-                        global.isConfirmState = true
                         global.action = "boardSetup"
+                        global.isConfirmState = true
                         global.minVoltage = dataJSON.actionResult.split(" ")[0]
                         global.maxVoltage = dataJSON.actionResult.split(" ")[1]
                         global.isCalibrationDone = true
