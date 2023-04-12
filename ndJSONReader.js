@@ -96,10 +96,13 @@ const eventController = (data) => {
             global.gameId = data.game.fullId
             global.FEN = data.game.fen
             global.moves = []
+            global.color = data.game.color
             global.arduinoCommunication = spawn('python3', ['serial_module.py'])
             fetchData('stream game', {gameId: global.gameId})
             //await ask('what is your move?')
-            getInfoFromArduino()
+            if (global.color === 'white'){
+                getInfoFromArduino()
+            }
             break;
         }
         case 'gameState': {

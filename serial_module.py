@@ -168,9 +168,6 @@ if __name__ == '__main__':
                         help='Calibrate the board')
     args = parser.parse_args()
     startCalibration = args.startCalibration
-    if(startCalibration):
-        message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
-        subprocess.Popen(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
     
     arduino = Arduino()
     time.sleep(0.1)

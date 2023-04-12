@@ -81,7 +81,7 @@ void loop() {
 //      char incomingByte = Serial.read();
 //      buffer += incomingByte;
 //    }
-  Serial.println(buffer);
+    Serial.println(buffer);
 //  Serial.println("Tes/t");
   if(buffer == "Start Calibration"){
     scanned = false;
@@ -132,24 +132,23 @@ void loop() {
       delay(1000);
     }
   }
-//  else {
-//    Serial.println("pe2");
-//    delay(1000);
-//    Serial.println("pe4");
-//    delay(1000);  
-//  }
+
 
 //  else if(buffer == "Wait for Begin Game"){
 //    calibration_done = true;
 //  }
   
   if(calibration_done && !game_started){
-    buttonState = digitalRead(buttonPin); // read the state of the button
-    if (buttonState == HIGH) { // if the button is pressed
-      Serial.println("Begin Game");
-      game_started = true;
-      delay(1000);
-    }
+    Serial.println("Begin Game");
+    game_started = true;
+  }
+
+  else if(game_started){
+    delay(1000);
+    Serial.println("pe2");
+    delay(2000); 
+    Serial.println("pe4");
+    delay(1000);
   }
   //color_detection
   else if (game_started && false){
