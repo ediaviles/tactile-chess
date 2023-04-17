@@ -75,7 +75,7 @@ class CreateAction:
             ndjson_data += json.dumps({key: value}) + "\n"
         sys.stdout.flush()
         #TODO: Reset after sending data to ensure all fuields go back to null?
-        self.reset()
+        #self.reset()
         print(ndjson_data)
 
 
@@ -112,10 +112,13 @@ class Arduino:
                 # print(data_decoded)
                 action.actionType = "Begin Game"
                 action.isCalibrationDone = True
-                action.Send_Action()
+                while True:
+                    action.Send_Action()
+                    time.sleep(2.5)
             elif(data_decoded != "" and self.Validate_Data(data_decoded)):
                 #print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
+                #print(piece+"$"+coordinate)
                 if((piece, coordinate) in action.data): #Piece is lifted and placed down
                     action.data.remove((piece, coordinate))
                 else:
@@ -125,6 +128,7 @@ class Arduino:
                     # send action info over to JS script
                     action.Send_Action()
                     pass
+                
                     
             else:
                 pass
@@ -166,9 +170,6 @@ if __name__ == '__main__':
                         help='Calibrate the board')
     args = parser.parse_args()
     startCalibration = args.startCalibration
-    if(startCalibration):
-        message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
-        subprocess.Popen(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
     
     arduino = Arduino()
     time.sleep(0.1)

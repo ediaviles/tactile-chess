@@ -33,7 +33,7 @@ const createAISeek = () => {
     axios.post(`https://lichess.org/api/challenge/ai`,
         {
             level: 1,
-            color: 'white'
+            color: 'black'
         },
         {headers: headers}
     )
@@ -95,7 +95,7 @@ const listenForCalibration = (data) => {
                         global.maxVoltage = dataJSON.actionResult.split(" ")[1]
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
-                        const message = "GAME_START:Please arrange the board to the starting position, and press the confirm button to begin game"
+                        const message = "GAME_START:Please arrange the board to the starting position, and press the 'Confirm' button to begin game"
                         const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
 
                         //console.log('Game seek started')
@@ -114,8 +114,6 @@ const listenForGameStart = (data) => {
                         dataJSON.hasOwnProperty("actionType") && dataJSON.actionType === "Begin Game" &&
                         global.gameId === null && global.isCalibrationDone === true) {
                         global.arduinoCommunication.stdout.off('data', listenForGameStart)
-                        const message = "MKE_MVE:Please make your move"
-                        const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
                         console.log('Game seek started')
                         createAISeek()
                     }
@@ -149,6 +147,7 @@ function main() {
     global.isConfirmState = false
     global.action = ""
     global.arduinoCommunication = null
+    global.color = ""
     
     gpio_start.watch((err, value) => {
         if (err) {
@@ -160,7 +159,7 @@ function main() {
             // once confirm is pressed the arduino runs
             if (global.arduinoCommunication !== null) {
                 global.isCalibrationDone = false;
-                global.arduinoCommunication.kill('SIGKILL');
+                global.arduinoCommunication.kill('SIGTERM');
             }
             //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             //spawn audio instead to start calibration state
@@ -183,6 +182,9 @@ function main() {
             resignGame(global.gameId)
 
             //Reseting game state values
+            global.arduinoCommunication.kill('SIGTERM')
+            const message = "RES_GAME:You have resigned the game by pressing the 'Confirm' button. Press the 'Start Game' button to start a new game"
+            const audioModule = spawn('python3', ['audio_module.py', '-text', message]) // notify the user we're moving to calibration step and to hit confirm
             global.gameId = null
             global.FEN = null
             global.moves = null

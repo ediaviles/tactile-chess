@@ -28,21 +28,37 @@ const validatePythonProcess = (data) => {
         console.log(dataString)
         if (dataString !== "-1" && dataString !== global.FEN) {
             global.FEN = dataString
-            global.moves.push(dataJSON.move)
-            axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${dataJSON.move}`, {}, {headers: headers})
+            let move = global.moves[global.moves.length - 1]
+            axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${move}`, {}, {headers: headers})
             global.arduinoCommunication.stdout.off('data', handleArduinoMoveInfo)
-        } else if (dataString === "-1") {console.log('invalid move')}
+        } else if (dataString === "-1") {
+            let invalidMove = global.moves.pop()
+            console.log(`${invalidMove} is invalid`)
+            //const message = ""
+            //const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+        }
     }
 
 const handleArduinoMoveInfo = (data) => {
+        console.log(data.toString())
         const dataJSONstrs = data.toString().trim().split('\n')
         const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
         
-        //console.log(dataJSON)
-        if (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData)) {
+        console.log(dataJSON)
+        // Waiting for user to replicate opponent's online move on the physical board
+        if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.opponentMove && dataJSON.move[0] === global.opponentPiece) {
+            global.makeOpponentMove = false
             prevData = dataJSON
-            console.log(global.FEN, dataJSON.move.slice(1, -1))
-            const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move.slice(1, -1)])
+            const message = "MKE_MVE:Please make your move"
+            const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+        }
+        // Waiting for user to make their own move on the physical board
+        else if (global.makeOpponentMove === false && (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
+        //if ((prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
+            prevData = dataJSON
+            console.log(global.FEN, dataJSON.move.slice(1))
+            global.moves.push(dataJSON.move.slice(1))
+            const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move.slice(1)])
             pythonProcess.stdout.on('data', validatePythonProcess)
         }
     }
@@ -92,9 +108,15 @@ const eventController = (data) => {
             global.gameId = data.game.fullId
             global.FEN = data.game.fen
             global.moves = []
+            global.color = data.game.color
+            global.arduinoCommunication = spawn('python3', ['serial_module.py'])
             fetchData('stream game', {gameId: global.gameId})
             //await ask('what is your move?')
-            getInfoFromArduino()
+            if (global.color === 'white'){
+                getInfoFromArduino()
+                const message = "MKE_MVE:Please make your move"
+                const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+            }
             break;
         }
         case 'gameState': {
@@ -106,9 +128,12 @@ const eventController = (data) => {
                     const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', lastMove, '-update', 'True'])
                     pythonProcess.stdout.on('data', (data) => {
                         //console.log('stdout: '+ data)
-                        const dataString = data.toString().trim()
-                        if (dataString !== '-1' && dataString !== global.FEN) {
+                        const dataString = data.toString().trim().split("$")
+                        if (dataString !== '-1' && dataString[1] !== global.FEN) {
                             global.FEN = dataString
+                            global.opponentMove = lastMove
+                            global.opponentPiece = dataString[0]
+                            global.makeOpponentMove = true
                         }
                     })
                     pythonProcess.on('close', (code) => {
