@@ -118,6 +118,7 @@ class Arduino:
             elif(data_decoded != "" and self.Validate_Data(data_decoded)):
                 #print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
+                #print(piece+"$"+coordinate)
                 if((piece, coordinate) in action.data): #Piece is lifted and placed down
                     action.data.remove((piece, coordinate))
                 else:
@@ -127,6 +128,7 @@ class Arduino:
                     # send action info over to JS script
                     action.Send_Action()
                     pass
+                
                     
             else:
                 pass

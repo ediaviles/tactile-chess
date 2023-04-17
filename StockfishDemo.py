@@ -159,8 +159,12 @@ if __name__ == '__main__':
             message = "OPP_MOVE:"
         message += gameState.piece + " " + gameState.move
     
-    print(result)
+    
     subprocess.Popen(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
+    if result != "-1":
+        print(gameState.piece + "$" + result)
+    else:
+        print(result)
     
     
         # exit(0)

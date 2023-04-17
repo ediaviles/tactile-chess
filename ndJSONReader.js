@@ -34,15 +34,27 @@ const validatePythonProcess = (data) => {
         } else if (dataString === "-1") {
             let invalidMove = global.moves.pop()
             console.log(`${invalidMove} is invalid`)
+            //const message = ""
+            //const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
         }
     }
 
 const handleArduinoMoveInfo = (data) => {
+        console.log(data.toString())
         const dataJSONstrs = data.toString().trim().split('\n')
         const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
         
         console.log(dataJSON)
-        if (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData)) {
+        // Waiting for user to replicate opponent's online move on the physical board
+        if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.opponentMove && dataJSON.move[0] === global.opponentPiece) {
+            global.makeOpponentMove = false
+            prevData = dataJSON
+            const message = "MKE_MVE:Please make your move"
+            const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+        }
+        // Waiting for user to make their own move on the physical board
+        else if (global.makeOpponentMove === false && (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
+        //if ((prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
             prevData = dataJSON
             console.log(global.FEN, dataJSON.move.slice(1))
             global.moves.push(dataJSON.move.slice(1))
@@ -102,6 +114,8 @@ const eventController = (data) => {
             //await ask('what is your move?')
             if (global.color === 'white'){
                 getInfoFromArduino()
+                const message = "MKE_MVE:Please make your move"
+                const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
             }
             break;
         }
@@ -114,9 +128,12 @@ const eventController = (data) => {
                     const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', lastMove, '-update', 'True'])
                     pythonProcess.stdout.on('data', (data) => {
                         //console.log('stdout: '+ data)
-                        const dataString = data.toString().trim()
-                        if (dataString !== '-1' && dataString !== global.FEN) {
+                        const dataString = data.toString().trim().split("$")
+                        if (dataString !== '-1' && dataString[1] !== global.FEN) {
                             global.FEN = dataString
+                            global.opponentMove = lastMove
+                            global.opponentPiece = dataString[0]
+                            global.makeOpponentMove = true
                         }
                     })
                     pythonProcess.on('close', (code) => {

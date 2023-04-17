@@ -144,9 +144,9 @@ void loop() {
   }
 
   else if(game_started){
-    delay(1000);
+    delay(10000);
     Serial.println("pe2");
-    delay(2000); 
+    delay(10000); 
     Serial.println("pe4");
     delay(1000);
   }

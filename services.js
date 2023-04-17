@@ -114,8 +114,6 @@ const listenForGameStart = (data) => {
                         dataJSON.hasOwnProperty("actionType") && dataJSON.actionType === "Begin Game" &&
                         global.gameId === null && global.isCalibrationDone === true) {
                         global.arduinoCommunication.stdout.off('data', listenForGameStart)
-                        const message = "MKE_MVE:Please make your move"
-                        const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
                         console.log('Game seek started')
                         createAISeek()
                     }
