@@ -23,8 +23,9 @@ void loop() {
   
   // Output voltage value to serial monitor for debugging purposes
   Serial.print("Voltage: ");
-  Serial.print(voltage);
-  Serial.println("Tile: \d",binaryValue);
+  Serial.println(voltage);
+  Serial.print("Tile: ")
+  Serial.println(binaryValue);
   
   // Increment binary value of pins 3, 4, and 5 until it equals 7
   
@@ -32,7 +33,7 @@ void loop() {
     digitalWrite(4, bitRead(binaryValue, 1));
     digitalWrite(5, bitRead(binaryValue, 2));
     binaryValue++;
-    if(binaryValue >= 7){
+    if(binaryValue > 7){
       binaryValue = 0;
     }
     delay(500); // Delay for half a second to display each binary count
