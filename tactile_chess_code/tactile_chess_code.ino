@@ -5,7 +5,18 @@ int sensorPin1 = A0;
 int sensorPin2 = A1;
 int sensorPin3 = A2;
 
-float BASE_VOLTAGES[2];
+float MIN_BASE_VOLTAGE;
+float MAX_BASE_VOLTAGE;
+
+//Keep track of the pieces min and max voltage range when magnetic field is present over HE sensor
+struct PieceVoltage {
+  String piece;
+  float min_voltage;
+  float max_voltage;
+};
+
+const int MAX_ENTRIES = 10;
+PieceVoltage VOLTAGE_RANGES[MAX_ENTRIES];
 
 int demo[3]; //sensors used for interim demo
 float demo_volt[3]; //voltage readings for interim demo sensors
@@ -37,6 +48,18 @@ float measure_voltage(int pin) {
   return voltage;
 }
 
+void find_piece_type(float voltage) {
+for (int i = 0; i < MAX_ENTRIES; i++) {
+    float min_voltage = VOLTAGE_RANGES[i].min_voltage;
+    float max_voltage = VOLTAGE_RANGES[i].max_voltage;
+    if(voltage >= min_voltage && voltage <= max_voltage){
+      Serial.print("Piece is:");
+      Serial.println(VOLTAGE_RANGES[i].piece);
+      break;
+    }
+  }
+}
+
 void setup() {
   pinMode(buttonPin, INPUT); // set the button pin as input
 
@@ -59,9 +82,17 @@ void setup() {
   demo[1] = sensorPin2;
   demo[2] = sensorPin3;
 
-  for(int i = 0; i < 2; i++){
-    BASE_VOLTAGES[i] = -1;
-  }
+  MIN_BASE_VOLTAGE = -1.0f;
+  MAX_BASE_VOLTAGE = -1.0f;
+
+  //Add voltage range for each unique piece 
+  //TODO: MAKE THE VALUES THE DIFFERENCE INSTEAD? NOT SURE    
+  VOLTAGE_RANGES[0] = {"p", 2.31, 2.35};
+  VOLTAGE_RANGES[1] = {"P", 2.63, 2.67};
+  VOLTAGE_RANGES[2] = {"r", 2.21, 2.25};
+  VOLTAGE_RANGES[3] = {"R", 2.73, 2.77};
+  VOLTAGE_RANGES[4] = {"n", 2.15, 2.19};
+  VOLTAGE_RANGES[5] = {"N", 2.81, 2.85};
   
   for(int i = 0; i < 3; i++){
     demo_volt[i] = -1;
@@ -118,16 +149,16 @@ void loop() {
       if(voltage3 > max_voltage){
         max_voltage = voltage3;
       }
-      BASE_VOLTAGES[0] = min_voltage - 0.01;
-      BASE_VOLTAGES[1] = max_voltage + 0.01;
+      MIN_BASE_VOLTAGE = min_voltage - 0.01;
+      MAX_BASE_VOLTAGE = max_voltage + 0.01;
       Serial.print("Min Voltage: ");
-      Serial.println(BASE_VOLTAGES[0]);
+      Serial.println(MIN_BASE_VOLTAGE);
       Serial.print("Max Voltage: ");
-      Serial.println(BASE_VOLTAGES[1]);
+      Serial.println(MAX_BASE_VOLTAGE);
       Serial.print("Calibration Complete:"); // print a message to the serial monitor
-      Serial.print(BASE_VOLTAGES[0]);
+      Serial.print(MIN_BASE_VOLTAGE);
       Serial.print(" ");
-      Serial.print(BASE_VOLTAGES[1]);
+      Serial.print(MAX_BASE_VOLTAGE);
       Serial.println();
       delay(1000);
     }
@@ -142,36 +173,28 @@ void loop() {
     Serial.println("Begin Game");
     game_started = true;
   }
-
-  else if(game_started){
-    delay(10000);
-    Serial.println("pe2");
-    delay(10000); 
-    Serial.println("pe4");
-    delay(1000);
-  }
+  
   //color_detection
-  else if (game_started && false){
+  else if (game_started){
+    //First identify type of piece
     for (int i = 0; i < 3; i++){
       float voltage = measure_voltage(demo[i]); // Measure voltage using the function from the voltage_measurement file
       demo_volt[i] = voltage;
-      if(voltage > BASE_VOLTAGES[1] || voltage < BASE_VOLTAGES[0]){
+      if(voltage > MIN_BASE_VOLTAGE || voltage < MAX_BASE_VOLTAGE){
         Serial.print("Voltage on pin ");
         Serial.print(demo[i]);
         Serial.print(": ");
         Serial.print(demo_volt[i]); // Print the voltage to 2 decimal places
         Serial.println("V");
 
-        if (voltage > BASE_VOLTAGES[1]) {
-          Serial.println("White piece detected");
-        } else if (voltage < BASE_VOLTAGES[0]) {
-          Serial.println("Black piece detected");
-        } else {
-          Serial.println("no piece detected");
-        }
+        find_piece_type(voltage);
         
         delay(1000); // debounce the button
       }
     }
+    //Second identify the coordinate
+
+//    
+    
   }
 }
