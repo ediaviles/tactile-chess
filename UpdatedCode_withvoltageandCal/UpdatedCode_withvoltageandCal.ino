@@ -39,7 +39,6 @@ void setup() {
     for(int k = 0;  k<8;k++){
       prevValues[i][k] = -1;
     }
-    
   }
 }
 
