@@ -19,13 +19,18 @@ void setup(){
 
     //Add voltage range for each unique piece 
     //TODO: MAKE THE VALUES THE DIFFERENCE INSTEAD? NOT SURE    
-    VOLTAGE_RANGES[0] = {"p", 2.31, 2.35};
-    VOLTAGE_RANGES[1] = {"P", 2.63, 2.67};
-    VOLTAGE_RANGES[2] = {"r", 2.21, 2.25};
-    VOLTAGE_RANGES[3] = {"R", 2.73, 2.77};
-    VOLTAGE_RANGES[4] = {"n", 2.15, 2.19};
-    VOLTAGE_RANGES[5] = {"N", 2.81, 2.85};
-    
+    VOLTAGE_RANGES[0] = {"p", 2.39, 2.41};
+    VOLTAGE_RANGES[1] = {"P", 2.56, 2.57};
+    VOLTAGE_RANGES[2] = {"r", 2.33, 2.35};
+    VOLTAGE_RANGES[3] = {"R", 2.63, 2.65};
+    VOLTAGE_RANGES[4] = {"n", 2.27, 2.31};
+    VOLTAGE_RANGES[5] = {"N", 2.67, 2.69};
+    VOLTAGE_RANGES[6] = {"b", 2.24, 2.26};
+    VOLTAGE_RANGES[7] = {"B", 2.74, 2.77};
+    VOLTAGE_RANGES[8] = {"q", 2.20, 2.23};
+    VOLTAGE_RANGES[9] = {"Q", 2.78, 2.81};    
+    VOLTAGE_RANGES[10] = {"k", 2.16, 2.18};
+    VOLTAGE_RANGES[11] = {"K", 2.82, 2.85};
     Serial.begin(9600);
 }
 
