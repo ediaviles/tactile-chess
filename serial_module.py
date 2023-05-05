@@ -7,7 +7,6 @@ import argparse
 
 class CreateAction:
     def __init__(self, startCalibration: bool):
-        self.prevMessage = None
         self.isCalibrationDone = not startCalibration
         self.reset()
         
@@ -75,7 +74,7 @@ class CreateAction:
             ndjson_data += json.dumps({key: value}) + "\n"
         sys.stdout.flush()
         #TODO: Reset after sending data to ensure all fuields go back to null?
-        #self.reset()
+        self.reset()
         print(ndjson_data)
 
 
@@ -86,7 +85,7 @@ class Arduino:
         self.pieces = set({"P", "R", "N", "B", "Q", "K",
                            "p", "r", "n", "b", "q", "k"})
 
-    def establishSerialCommunication(self, startCalibration):
+    def establishSerialCommunication(self, startCalibration, beginGame):
         action = CreateAction(startCalibration)
         while True:
             data_decoded = ""
@@ -96,7 +95,10 @@ class Arduino:
                 while self.arduino.in_waiting == 0:
                     self.arduino.write("Start Calibration".encode('utf-8'))
                     time.sleep(2.5)
-            
+            if(beginGame):
+                while self.arduino.in_waiting == 0:
+                    self.arduino.write("Begin Game".encode('utf-8'))
+                    time.sleep(2.5)
             if (self.arduino.in_waiting > 0):
                 data_decoded = self.arduino.readline().decode().rstrip()
             if (data_decoded != "" and data_decoded.startswith('Calibration Complete')):
@@ -166,15 +168,18 @@ class Arduino:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Serial module to establish communication with arduino')
-    parser.add_argument('-startCalibration', metavar='C', type=bool, nargs='?', required=False,
+    parser.add_argument('-startCalibration', metavar='C', type=bool, nargs='?', required=False, default=False,
                         help='Calibrate the board')
+    parser.add_argument('-beginGame', metavar='C', type=bool, nargs='?', required=False, default=False,
+                        help='Write begin game')
     args = parser.parse_args()
     startCalibration = args.startCalibration
+    beginGame = args.beginGame
     
     arduino = Arduino()
     time.sleep(0.1)
     sys.stdout.flush()
     if arduino.arduino.isOpen():
         #Get data and validate it
-        arduino.establishSerialCommunication(startCalibration)
+        arduino.establishSerialCommunication(startCalibration, beginGame)
             

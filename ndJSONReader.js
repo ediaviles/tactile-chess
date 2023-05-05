@@ -26,8 +26,8 @@ const validatePythonProcess = (data) => {
         const dataString = data.toString().trim()
         console.log("in validatepythonprocess")
         console.log(dataString)
-        if (dataString !== "-1" && dataString !== global.FEN) {
-            global.FEN = dataString
+        if (dataString !== "-1" && dataString.split("$")[1] !== global.FEN) {
+            global.FEN = dataString.split("$")[1]
             let move = global.moves[global.moves.length - 1]
             axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${move}`, {}, {headers: headers})
             global.arduinoCommunication.stdout.off('data', handleArduinoMoveInfo)
@@ -45,8 +45,14 @@ const handleArduinoMoveInfo = (data) => {
         const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
         
         console.log(dataJSON)
+        console.log("values")
+        console.log(global.makeOpponentMove)
+        console.log(dataJSON.move.slice(1))
+        console.log(global.opponentMove)
+        console.log(dataJSON.move[0])
+        console.log(global.opponentPiece)
         // Waiting for user to replicate opponent's online move on the physical board
-        if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.opponentMove && dataJSON.move[0] === global.opponentPiece) {
+        if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.opponentMove) { //&& dataJSON.move[0] === global.opponentPiece) {
             global.makeOpponentMove = false
             prevData = dataJSON
             const message = "MKE_MVE:Please make your move"
@@ -56,6 +62,7 @@ const handleArduinoMoveInfo = (data) => {
         else if (global.makeOpponentMove === false && (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
         //if ((prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
             prevData = dataJSON
+            console.log("calling validatePythonPorcess on:")
             console.log(global.FEN, dataJSON.move.slice(1))
             global.moves.push(dataJSON.move.slice(1))
             const pythonProcess = spawn('python3', ['StockfishDemo.py', '-fen', global.FEN, '-move', dataJSON.move.slice(1)])
@@ -80,8 +87,8 @@ async function ask(question) {
         pythonProcess.stdout.on('data', (data) => {
             //console.log('stdout: ' + data)
             const dataString = data.toString().trim()
-            if (dataString !== "-1" && dataString !== global.FEN) {
-                global.FEN = dataString
+            if (dataString !== "-1" && dataString.split("$")[1] !== global.FEN) {
+                global.FEN = dataString.split("$")[1]
                 global.moves.push(answer)
                 axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${answer}`, {},
                 {
@@ -129,17 +136,22 @@ const eventController = (data) => {
                     pythonProcess.stdout.on('data', (data) => {
                         //console.log('stdout: '+ data)
                         const dataString = data.toString().trim().split("$")
+                        
                         if (dataString !== '-1' && dataString[1] !== global.FEN) {
-                            global.FEN = dataString
+                            global.FEN = dataString[1]
+                            console.log("data string is: ", dataString)
+                            console.log("global fen is: ")
+                            console.log(global.FEN)
                             global.opponentMove = lastMove
                             global.opponentPiece = dataString[0]
                             global.makeOpponentMove = true
+                            getInfoFromArduino()
                         }
                     })
                     pythonProcess.on('close', (code) => {
                         //console.log('child process exited opponent move')
                         //ask('what is your move?')
-                        getInfoFromArduino()
+                        
                     }); 
                 }
             }
