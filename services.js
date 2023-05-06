@@ -128,9 +128,10 @@ const confirmAction = (action) => {
             global.isConfirmState = false
             break;
         case "boardSetup":
+            global.arduinoCommunication.kill('SIGTERM')
             console.log("in board setup confirmation case")
-            global.arduinoCommunication.kill('SIGTERM');
             global.arduinoCommunication = spawn('python3', ['serial_module.py', '-beginGame', 'True'])
+            console.log("after spawning process")
             global.arduinoCommunication.stdout.on('data', listenForGameStart)
             global.isConfirmState = false
             break;

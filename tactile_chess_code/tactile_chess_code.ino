@@ -52,8 +52,8 @@ int col = 0;
 String FEN[8][8];
 
 bool scanned = false; //boolean to see if board has been scanned and callibrated
-bool calibration_done = false; //boolean to check if board has been calibrated
-bool game_started = false; //boolean to check if board has been calibrated
+bool calibration_done; //boolean to check if board has been calibrated
+bool game_started; //boolean to check if board has been calibrated
 
 //const float BASE_VOLTAGE = 2.5; // Base voltage value in Volts
 
@@ -272,7 +272,7 @@ void polarity_detection(){
       float curr_value = measure_voltage(r,c);
       
       if(abs(curr_value - prevValues[r][c]) >= DELTA){
-        delay(2000);
+        delay(1000);
         Serial.print("p");
         Serial.print(chess_columns[c]);
         Serial.println(chess_rows[r]);
@@ -351,7 +351,8 @@ void setup() {
   pinMode(COL_SELECT_0, OUTPUT);
   pinMode(COL_SELECT_1, OUTPUT);
   pinMode(ANALOG_PIN, INPUT); //Define Analog Pin
-  
+  game_started = false;
+  calibration_done = false;
   Serial.begin(9600); // Initialize serial communication
   // Keep digital pin 7 always high
   digitalWrite(ENABLE_PIN, HIGH);
@@ -390,7 +391,6 @@ void loop() {
     calibration_check();
     //calibration_done = true;
   }
-
   //TODO: ADD LOGIC TO WAIT FOR PIECES TO BE PLACED ON THE BOARD
   if(buffer == "Begin Game" && calibration_done && !game_started){
     set_chess_board();

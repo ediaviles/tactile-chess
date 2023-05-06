@@ -114,9 +114,7 @@ class Arduino:
                 # print(data_decoded)
                 action.actionType = "Begin Game"
                 action.isCalibrationDone = True
-                while True:
-                    action.Send_Action()
-                    time.sleep(2.5)
+                action.Send_Action()
             elif(data_decoded != "" and self.Validate_Data(data_decoded)):
                 #print(data_decoded)
                 piece, coordinate = data_decoded[0], data_decoded[1:]
