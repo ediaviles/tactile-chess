@@ -41,16 +41,16 @@ class CreateAction:
                       (piece == "r" and "r" in pieces and pieces["r"][0] == 1 and "k" in pieces and pieces["k"][0] == 2)):
                     #castling complete
                     self.actionType = "Castling"
-                    currPiece, currCoor = piece, pieces[piece][1]+coor
+                    currPiece, currCoor = piece, pieces[piece][1]+coordinate
                     pieces.pop(piece)
-                    resPiece, coorInfo = next(iter(my_dict.items()))
-                    self.move = resPiece + coorInfo
+                    resPiece, coorInfo = next(iter(pieces.items()))
+                    self.move = resPiece + coorInfo[-1]
                     self.actionResult = currPiece + currCoor
                     break
                 elif(len(self.data) == 3):
                     self.actionType = "Capture"
                     self.move = piece + pieces.pop(piece)[1] + coordinate
-                    resPiece, coor_info = next(iter(my_dict.items()))
+                    resPiece, coor_info = next(iter(pieces.items()))
                     self.actionResult = resPiece + coor_info[1]
                     break
                 elif(len(self.data) == 2):
@@ -62,7 +62,8 @@ class CreateAction:
                 pieces[piece] = (pieces[piece][0] + 1, pieces[piece][1] + coordinate)
             else: 
                 pieces[piece] = (1, coordinate)
-                    
+        
+        #print(pieces)
         if(self.actionType != ''):
             return True
         else:
@@ -101,6 +102,8 @@ class Arduino:
                     time.sleep(2.5)
             if (self.arduino.in_waiting > 0):
                 data_decoded = self.arduino.readline().decode().rstrip()
+                #print(data_decoded)
+            #data_decoded = input("Enter info: ")
             if (data_decoded != "" and data_decoded.startswith('Calibration Complete')):
                 # print(data_decoded)
                 action.actionResult = data_decoded.split(":")[-1] # Send min and max voltage as a space divided string
@@ -180,4 +183,4 @@ if __name__ == '__main__':
     if arduino.arduino.isOpen():
         #Get data and validate it
         arduino.establishSerialCommunication(startCalibration, beginGame)
-            
+        

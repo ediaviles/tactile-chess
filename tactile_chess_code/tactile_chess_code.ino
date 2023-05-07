@@ -18,7 +18,7 @@ struct PieceVoltage {
 //TODO: REMOVE THIS BOOLEAN
 bool TEMP = true;
 
-const float DELTA = 0.03;
+const float DELTA = 0.07;
 
 const char chess_columns[] = {'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'};
 const char chess_rows[] = {'1', '2', '3', '4', '5', '6', '7', '8'};
@@ -52,8 +52,8 @@ int col = 0;
 String FEN[8][8];
 
 bool scanned = false; //boolean to see if board has been scanned and callibrated
-bool calibration_done; //boolean to check if board has been calibrated
-bool game_started; //boolean to check if board has been calibrated
+bool calibration_done = false; //boolean to check if board has been calibrated
+bool game_started = false; //boolean to check if board has been calibrated
 
 //const float BASE_VOLTAGE = 2.5; // Base voltage value in Volts
 
@@ -125,8 +125,11 @@ void calibration_check(){
     }
     scanned = true;
     calibration_done = true;
-    MIN_BASE_VOLTAGE = min_val;
-    MAX_BASE_VOLTAGE = max_val;
+//    MIN_BASE_VOLTAGE = min_val;
+//    MAX_BASE_VOLTAGE = max_val;
+
+    MIN_BASE_VOLTAGE = 2.45;
+    MAX_BASE_VOLTAGE = 2.53;
     Serial.print("Min Voltage: ");
     Serial.println(MIN_BASE_VOLTAGE);
     Serial.print("Max Voltage: ");
@@ -273,7 +276,25 @@ void polarity_detection(){
       
       if(abs(curr_value - prevValues[r][c]) >= DELTA){
         delay(1000);
-        Serial.print("p");
+        String piece = "p";
+        curr_value = measure_voltage(r,c);
+        Serial.print("Curr_value: ");
+        Serial.println(curr_value);
+        Serial.print("Prev Value: ");
+        Serial.println(prevValues[r][c]);
+        if((curr_value >= MIN_BASE_VOLTAGE && curr_value <= MAX_BASE_VOLTAGE) && (prevValues[r][c] < MIN_BASE_VOLTAGE || prevValues[r][c] > MAX_BASE_VOLTAGE)){
+          if(prevValues[r][c] > MAX_BASE_VOLTAGE){
+            Serial.println("Picked UP");
+            piece = "P";
+          }
+        }
+        else if((prevValues[r][c] >= MIN_BASE_VOLTAGE && prevValues[r][c] <= MAX_BASE_VOLTAGE) && (curr_value < MIN_BASE_VOLTAGE || curr_value > MAX_BASE_VOLTAGE)){
+          if(curr_value > MAX_BASE_VOLTAGE){
+            Serial.println("Put DOWN");
+            piece = "P";
+          }
+        }
+        Serial.print(piece);
         Serial.print(chess_columns[c]);
         Serial.println(chess_rows[r]);
         prevValues[r][c] = measure_voltage(r, c);
@@ -351,8 +372,6 @@ void setup() {
   pinMode(COL_SELECT_0, OUTPUT);
   pinMode(COL_SELECT_1, OUTPUT);
   pinMode(ANALOG_PIN, INPUT); //Define Analog Pin
-  game_started = false;
-  calibration_done = false;
   Serial.begin(9600); // Initialize serial communication
   // Keep digital pin 7 always high
   digitalWrite(ENABLE_PIN, HIGH);
@@ -391,7 +410,7 @@ void loop() {
     calibration_check();
     //calibration_done = true;
   }
-  //TODO: ADD LOGIC TO WAIT FOR PIECES TO BE PLACED ON THE BOARD
+  //TODO: ADD LOGIC TO WAIT FOR PIECES TO BE PLACED ON THE BOAR
   if(buffer == "Begin Game" && calibration_done && !game_started){
     set_chess_board();
     game_started = true;

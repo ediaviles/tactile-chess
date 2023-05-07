@@ -163,6 +163,7 @@ function main() {
             if (global.arduinoCommunication !== null) {
                 global.isCalibrationDone = false;
                 global.arduinoCommunication.kill('SIGTERM');
+                global.arduinoCommunication = null
             }
             //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             //spawn audio instead to start calibration state
@@ -192,6 +193,7 @@ function main() {
             global.FEN = null
             global.moves = null
             global.isCalibrationDone = false
+            global.arduinoCommunication = null
         }
     })
 
