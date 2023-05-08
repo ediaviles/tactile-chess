@@ -11,9 +11,9 @@ int r1 = 5;
 int r2 = 6;
 
 //Mux col select pins
-int c0 = 7;
-int c1 = 8;
-int c2 = 9;
+int c0 = 8;
+int c1 = 9;
+int c2 = 10;
 
 //General enablepin
 int en = 2;
@@ -48,8 +48,8 @@ void setup(){
 void loop(){
 
   //Loop through and read all 8 values
-  for(int r = 0; r < 8; r++){
-    for(int c = 0; c < 8; c++){
+  for(int r = 5; r < 6; r++){
+    for(int c = 6; c < 7; c++){
       Serial.print("Value at r");
       Serial.print(r);
       Serial.print(" c");

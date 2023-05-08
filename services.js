@@ -95,8 +95,8 @@ const listenForCalibration = (data) => {
                         global.maxVoltage = dataJSON.actionResult.split(" ")[1]
                         global.isCalibrationDone = true
                         global.arduinoCommunication.stdout.off('data', listenForCalibration)
-                        const message = "GAME_START:Please arrange the board to the starting position, and press the 'Confirm' button to begin game"
-                        const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+                        global.message = "GAME_START:Please arrange the board to the starting position, and press the 'Confirm' button to begin game"
+                        const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
 
                         //console.log('Game seek started')
                         //createAISeek()
@@ -126,6 +126,7 @@ const confirmAction = (action) => {
             global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             global.arduinoCommunication.stdout.on('data', listenForCalibration)
             global.isConfirmState = false
+            global.action = ""
             break;
         case "boardSetup":
             global.arduinoCommunication.kill('SIGTERM')
@@ -134,11 +135,32 @@ const confirmAction = (action) => {
             console.log("after spawning process")
             global.arduinoCommunication.stdout.on('data', listenForGameStart)
             global.isConfirmState = false
+            global.action = ""
             break;
         case "resign":
+            resignGame(global.gameId)
+            global.message = "MSG:You have successfully resigned the game"
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
+            global.isConfirmState = false
+            global.action = ""
+
+            //reset global variables
+            global.gameId = null
+            global.FEN = null
+            global.moves = null
+            global.isCalibrationDone = false
+            if (global.arudinoCommunication !== null) {
+                global.arduinoCommunication.kill('SIGTERM')
+            }
+            global.arduinoCommunication = null
             break;
         default:
-            console.log("no action to confirm")
+            if(global.fixMessage != "") {
+                const audioModule = spawn('python3', ['audio_module.py', '-text', global.fixMessage])
+            }
+            else if(global.message != "") {
+                const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
+            }
     }
 }
 
@@ -151,12 +173,16 @@ function main() {
     global.action = ""
     global.arduinoCommunication = null
     global.color = ""
+    global.message = ""
+    global.fixMove = ""
+    global.moveFixed = false
+    global.fixMessage = ""
     
     gpio_start.watch((err, value) => {
         if (err) {
             throw err;
         }
-        if (value === 1) {
+        if (value === 1 && global.gameId === null) {
             // calibration mode which calls the audio module
             // waits for confirm
             // once confirm is pressed the arduino runs
@@ -167,8 +193,8 @@ function main() {
             }
             //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
             //spawn audio instead to start calibration state
-            const message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
-            const audioModule = spawn('python3', ['audio_module.py', '-text', message]) // notify the user we're moving to calibration step and to hit confirm
+            global.message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
             global.isConfirmState = true
             global.action = "calibrationStart"
             console.log("start game button pressed")
@@ -180,20 +206,21 @@ function main() {
         if (err) {
             throw err;
         }
-        if (value === 1 && global.gameId !== null) {
+        if (value === 1 && global.action == "resign") {
+            global.action = ""
+            global.isConfirmState = false
+            global.message = "MSG:You have cancelled the resign game action"
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
+        }
+        else if (value === 1 && global.gameId !== null) {
             console.log('Game resigned')
             // Once we resign game reset all values related to the game state
-            resignGame(global.gameId)
+            global.isConfirmState = true
+            global.message = "RES_GAME:You have pressed the resign button, please press the 'Confirm' button to resign game or press the 'Resign' button to cancel"
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
+            global.action = "resign"
 
             //Reseting game state values
-            global.arduinoCommunication.kill('SIGTERM')
-            const message = "RES_GAME:You have resigned the game by pressing the 'Confirm' button. Press the 'Start Game' button to start a new game"
-            const audioModule = spawn('python3', ['audio_module.py', '-text', message]) // notify the user we're moving to calibration step and to hit confirm
-            global.gameId = null
-            global.FEN = null
-            global.moves = null
-            global.isCalibrationDone = false
-            global.arduinoCommunication = null
         }
     })
 
@@ -201,7 +228,7 @@ function main() {
         if (err) {
             throw err;
         }
-        if (value === 1 && global.isConfirmState === true) {
+        if (value === 1) {
             console.log("in confirm button press")
             confirmAction(global.action)
         }

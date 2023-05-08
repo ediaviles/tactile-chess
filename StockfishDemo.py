@@ -162,7 +162,7 @@ if __name__ == '__main__':
     
     subprocess.Popen(['python3', 'audio_module.py', '-text', message]) # Call Audio module with respective message and wait for response
     if result != "-1":
-        print(gameState.piece + "$" + result)
+        print(gameState.piece + "$" + result + "$" + message)
     else:
         print(result)
     

@@ -23,17 +23,24 @@ const rl = readline.createInterface({
 let prevData = null
 
 const validatePythonProcess = (data) => {
-        const dataString = data.toString().trim()
+        let dataString = data.toString().trim()
         console.log("in validatepythonprocess")
         console.log(dataString)
         if (dataString !== "-1" && dataString.split("$")[1] !== global.FEN) {
-            global.FEN = dataString.split("$")[1]
+            dataString = dataString.split("$")
+            global.FEN = dataString[1]
+            global.message = dataString[2]
             let move = global.moves[global.moves.length - 1]
             axios.post(`https://lichess.org/api/board/game/${global.gameId}/move/${move}`, {}, {headers: headers})
-            global.arduinoCommunication.stdout.off('data', handleArduinoMoveInfo)
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
+            //global.arduinoCommunication.stdout.off('data', handleArduinoMoveInfo)
         } else if (dataString === "-1") {
-            let invalidMove = global.moves.pop()
+            const invalidMove = global.moves.pop()
+            const dst = invalidMove.slice(1)
+            const src = invalidMove.slice(0, 2)
             console.log(`${invalidMove} is invalid`)
+            global.message = `MSG:The move ${invalidMove} is invalid. Please move the piece back from ${dst} to ${src}.`
+            const pythonProcess = spawn('python3', ['audio_module.py', 'text', global.message])
             //const message = ""
             //const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
         }
@@ -43,25 +50,44 @@ const handleArduinoMoveInfo = (data) => {
         console.log(data.toString())
         const dataJSONstrs = data.toString().trim().split('\n')
         const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-        
+        let move_message = ""
         console.log(dataJSON)
         console.log("values")
         console.log(global.makeOpponentMove)
         console.log(dataJSON.move.slice(1))
+        console.log(global.fixMove)
         console.log(global.opponentMove)
         console.log(dataJSON.move[0])
         console.log(global.opponentPiece)
         // Waiting for user to replicate opponent's online move on the physical board
-        if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.opponentMove) { //&& dataJSON.move[0] === global.opponentPiece) {
+        const dataString = data.toString().trim()
+        if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.opponentMove && global.fixMove === "") { //&& dataJSON.move[0] === global.opponentPiece) {
             global.makeOpponentMove = false
+            global.fixMove = ""
             prevData = dataJSON
-            const message = "MKE_MVE:Please make your move"
-            const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+            global.fixedMove = false
+            global.message = "MKE_MVE:Please make your move"
+            const pythonProcess = spawn('python3', ['audio_module.py', '-text', global.message])
+        }
+        else if (global.makeOpponentMove === true && dataJSON.move.slice(1) === global.fixMove) {
+            global.fixMove = ""
+            global.fixedMove = true
+            const pythonProcess = spawn('python3', ['audio_module.py', '-text', global.message])
+            global.fixMessage = ""
+        }
+        else if (global.makeOpponentMove === true && dataJSON.move.slice(1) !== global.opponentMove && dataJSON.move.slice(1) !== global.fixMove && global.moveFixed === false) {
+            const move = dataJSON.move.slice(1)
+            const dst = move.slice(2)
+            const src = move.slice(0, 2)
+            global.fixMessage = `MSG:The move was not replicated correctly, please move your piece back from ${dst} to ${src}, and replicate the move again`
+            global.fixMove = dst + src
+            const pythonProcess = spawn('python3', ['audio_module.py', '-text', global.fixMessage])
         }
         // Waiting for user to make their own move on the physical board
         else if (global.makeOpponentMove === false && (prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
         //if ((prevData === null || JSON.stringify(dataJSON) !== JSON.stringify(prevData))) {
             prevData = dataJSON
+            global.moveFixed = false
             console.log("calling validatePythonPorcess on:")
             console.log(global.FEN, dataJSON.move.slice(1))
             global.moves.push(dataJSON.move.slice(1))
@@ -112,17 +138,24 @@ const eventController = (data) => {
         case 'gameStart': {
             // once a game is started we want to open a new event stream to listen for chess moves being made
             //TODO
+            const message = "Game is Starting"
+            const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
             global.gameId = data.game.fullId
             global.FEN = data.game.fen
             global.moves = []
             global.color = data.game.color
-            global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+            //global.arduinoCommunication = spawn('python3', ['serial_module.py'])
+            getInfoFromArduino()
             fetchData('stream game', {gameId: global.gameId})
             //await ask('what is your move?')
+            console.log('before global message in gameStart')
+            global.message = `MSG:The game has started, your piece color is ${global.color}`
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
+            console.log('after spawn')
             if (global.color === 'white'){
-                getInfoFromArduino()
-                const message = "MKE_MVE:Please make your move"
-                const pythonProcess = spawn('python3', ['audio_module.py', '-text', message])
+                //getInfoFromArduino()
+                global.message = "MKE_MVE:Please make your move"
+                const pythonProcess = spawn('python3', ['audio_module.py', '-text', global.message])
             }
             break;
         }
@@ -145,7 +178,10 @@ const eventController = (data) => {
                             global.opponentMove = lastMove
                             global.opponentPiece = dataString[0]
                             global.makeOpponentMove = true
-                            getInfoFromArduino()
+                            global.message = dataString[2]
+                            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
+                            //console.log('Before getInfoFromArduino')
+                            //getInfoFromArduino()
                         }
                     })
                     pythonProcess.on('close', (code) => {
@@ -160,6 +196,19 @@ const eventController = (data) => {
         case 'gameFinish': {
             // once a game is finished we close all streams and redirect user to home page
             //TODO
+            //global.arduinoCommunication.kill('SI
+            
+            if (global.arduinoCommunication !== null) {
+                global.arduinoCommunication.stdout.off('data', handleArduinoMoveInfo)
+                global.arduinoCommunication.kill('SIGTERM')
+            }
+            global.gameId = null
+            global.FEN = null
+            global.moves = null
+            global.isCalibrationDone = false
+            global.arduinoCommunication = null
+            global.message = `MSG:Game has finished ${data.game.winner} has won`
+            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
             break;
         }
         case 'makeMove': {

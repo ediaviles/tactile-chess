@@ -1,12 +1,7 @@
 #include <stdlib.h>
 
-const int buttonPin = 13; // set the input pin for the button
-int buttonState = 0; // initialize the button state variable
-
 float MIN_BASE_VOLTAGE;
 float MAX_BASE_VOLTAGE;
-float min_val = -1;
-float max_val = -1;
 
 //Keep track of the pieces min and max voltage range when magnetic field is present over HE sensor
 struct PieceVoltage {
@@ -15,8 +10,10 @@ struct PieceVoltage {
   float max_voltage;
 };
 
-//TODO: REMOVE THIS BOOLEAN
-bool TEMP = true;
+struct SensorInfo {
+  float BASE_VOLTAGE;
+  float DELTA;
+};
 
 const float DELTA = 0.07;
 
@@ -26,17 +23,9 @@ const char chess_rows[] = {'1', '2', '3', '4', '5', '6', '7', '8'};
 const int MAX_ENTRIES = 15;
 PieceVoltage VOLTAGE_RANGES[MAX_ENTRIES];
 
-int demo[3]; //sensors used for interim demo
-float demo_volt[3]; //voltage readings for interim demo sensors
+SensorInfo SENSOR_BOARD[8][8];
 
-const byte BUFFER_SIZE = 50;
-String buffer;
-
-//MUX logic variables
-int binaryCounter = 0;
-int groupCounter = 0;
 float prevValues[8][8];
-float scannedMatrix[8][8];
 
 const int ENABLE_PIN = 2;
 const int ROW_SELECT_0 = 4;
@@ -47,15 +36,14 @@ const int COL_SELECT_1 = 9;
 const int COL_SELECT_2 = 10;
 const int ANALOG_PIN = A0;
 
-int row = 0;
-int col = 0;
-String FEN[8][8];
+//String FEN[8][8];
 
+const byte BUFFER_SIZE = 50;
+String buffer;
 bool scanned = false; //boolean to see if board has been scanned and callibrated
 bool calibration_done = false; //boolean to check if board has been calibrated
 bool game_started = false; //boolean to check if board has been calibrated
 
-//const float BASE_VOLTAGE = 2.5; // Base voltage value in Volts
 
 //Function to measure voltage on any given pin
 float measure_voltage(int row, int col){
@@ -87,11 +75,12 @@ float measure_voltage(int row, int col){
 }
 
 //Function to find the piece type depending on the voltage read
-String find_piece_type(float voltage) {
+String find_piece_type(float voltage, int r, int c) {
   for (int i = 0; i < MAX_ENTRIES; i++) {
     float min_voltage = VOLTAGE_RANGES[i].min_voltage;
     float max_voltage = VOLTAGE_RANGES[i].max_voltage;
-    if(voltage >= min_voltage && voltage <= max_voltage){
+    SensorInfo HE_sensor = SENSOR_BOARD[r][c];
+    if((voltage + HE_sensor.DELTA) >= (min_voltage) && (voltage + HE_sensor.DELTA) <= (max_voltage)){
       return VOLTAGE_RANGES[i].piece;
     }
   }
@@ -105,8 +94,8 @@ void calibration_check(){
   scanned = false;
   calibration_done = false;
   game_started = false;
-  min_val = -1;
-  max_val = -1;
+  float min_val = -1;
+  float max_val = -1;
   //calibration_check
   if(!scanned){
     for(int r = 0; r < 8; r++){
@@ -119,17 +108,25 @@ void calibration_check(){
         if(max_val == -1 || max_val < value){
           max_val = value;
         }
-        scannedMatrix[r][c] = value;
+        SENSOR_BOARD[r][c] = {2.48, -10.0};
         delay(10);
       }
     }
     scanned = true;
     calibration_done = true;
-//    MIN_BASE_VOLTAGE = min_val;
-//    MAX_BASE_VOLTAGE = max_val;
-
+    //MIN_BASE_VOLTAGE = min_val;
+    //MAX_BASE_VOLTAGE = max_val;
+//
     MIN_BASE_VOLTAGE = 2.45;
     MAX_BASE_VOLTAGE = 2.53;
+    float BASE_VOLT = (MIN_BASE_VOLTAGE + MAX_BASE_VOLTAGE) / 2;
+    Serial.println(BASE_VOLT);
+    for (int r = 0; r < 8; r++){
+      for (int c = 0; c < 8; c++){
+        SENSOR_BOARD[r][c] = {SENSOR_BOARD[r][c].BASE_VOLTAGE, (BASE_VOLT - SENSOR_BOARD[r][c].BASE_VOLTAGE)};
+        delay(10);
+      }
+    }
     Serial.print("Min Voltage: ");
     Serial.println(MIN_BASE_VOLTAGE);
     Serial.print("Max Voltage: ");
@@ -230,19 +227,19 @@ void set_bishop_values(){
 void set_chess_board(){
   for(int r = 0; r < 8; r++){
     for(int c = 7; c > -1; c--){
-      prevValues[r][c] = measure_voltage(r,c);
+      prevValues[r][c] = (measure_voltage(r,c) + SENSOR_BOARD[r][c].DELTA);
       delay(10);
     }
   }
-  
-  set_pawn_values();
-  set_rook_values();
-  set_knight_values();
-  set_bishop_values();
-  
+//  
+//  set_pawn_values();
+//  set_rook_values();
+//  set_knight_values();
+//  set_bishop_values();
+//  
   for(int r = 0; r < 8; r++){
     for(int c = 7; c > -1; c--){
-      FEN[r][c] = find_piece_type(prevValues[r][c]);
+      //FEN[r][c] = find_piece_type(prevValues[r][c], r, c);
       delay(10);
     }
   }
@@ -272,95 +269,99 @@ void print_float_matrix(float matrix[][8]){
 void polarity_detection(){
   for(int r = 0; r < 8; r++){
     for(int c = 7; c > -1; c--){
-      float curr_value = measure_voltage(r,c);
+      float curr_value = (measure_voltage(r,c) + SENSOR_BOARD[r][c].DELTA);
       
       if(abs(curr_value - prevValues[r][c]) >= DELTA){
-        delay(1000);
+        delay(1500);
+        curr_value = (measure_voltage(r,c) + SENSOR_BOARD[r][c].DELTA);
         String piece = "p";
-        curr_value = measure_voltage(r,c);
         Serial.print("Curr_value: ");
         Serial.println(curr_value);
         Serial.print("Prev Value: ");
         Serial.println(prevValues[r][c]);
         if((curr_value >= MIN_BASE_VOLTAGE && curr_value <= MAX_BASE_VOLTAGE) && (prevValues[r][c] < MIN_BASE_VOLTAGE || prevValues[r][c] > MAX_BASE_VOLTAGE)){
           if(prevValues[r][c] > MAX_BASE_VOLTAGE){
-            Serial.println("Picked UP");
             piece = "P";
           }
         }
         else if((prevValues[r][c] >= MIN_BASE_VOLTAGE && prevValues[r][c] <= MAX_BASE_VOLTAGE) && (curr_value < MIN_BASE_VOLTAGE || curr_value > MAX_BASE_VOLTAGE)){
+         
           if(curr_value > MAX_BASE_VOLTAGE){
-            Serial.println("Put DOWN");
             piece = "P";
           }
         }
         Serial.print(piece);
         Serial.print(chess_columns[c]);
         Serial.println(chess_rows[r]);
-        prevValues[r][c] = measure_voltage(r, c);
+        float real_voltage = measure_voltage(r, c);
+        Serial.println(real_voltage);
+        Serial.println(real_voltage + SENSOR_BOARD[r][c].DELTA);
+        prevValues[r][c] = (real_voltage + SENSOR_BOARD[r][c].DELTA);
+        //FEN[r][c] = find_piece_type(prevValues[r][c], r, c);
         //print_float_matrix(prevValues);
+        //print_matrix(FEN);
       }
     }
   }
 }
 
-void piece_detection(){
-  //Loop through and read all 8 values
-  for(int r = 0; r < 8; r++){
-    for(int c = 7; c > -1; c--){
-      float curr_value = measure_voltage(r,c);
-      
-      if(abs(curr_value - prevValues[r][c] >= DELTA)){
-        delay(2000);
-        //STABILIZING LOGIC
-          // float lastValue = -1;
-          // int counter = 0;
-          // bool found = false;
-          // while(true){
-          //   value = readMux(r,c);
-          //   if(lastValue == -1 || lastValue == value)
-          //     counter++;
-          //     if(counter == 4){
-          //       found = true;
-          //       break;
-          //     }
-          //     lastValue = value;
-          //   }
-          //   break;
-          // }
-          
-        float stab_val = measure_voltage(r,c);
-        String moved_piece = find_piece_type(stab_val);
-        if((prevValues[r][c] != stab_val) && (FEN[r][c] != moved_piece)){
-          Serial.println("Change detected...");
-          Serial.print("Value Before Checking = ");
-          Serial.println(curr_value);
-          Serial.print("Previous Value = ");
-          Serial.println(prevValues[r][c]);
-          Serial.print("Current value = ");
-          Serial.println(stab_val);
-          Serial.print("Previous Piece = ");
-          Serial.println(FEN[r][c]);
-          Serial.print("Current Piece (BC) = ");
-          Serial.println(moved_piece);
-          if(FEN[r][c] != "X" && moved_piece == "X"){
-            moved_piece = FEN[r][c];
-          }
-          Serial.print("Current Piece = ");
-          Serial.println(moved_piece);
-          prevValues[r][c] = stab_val;
-          FEN[r][c] = moved_piece;
-          // String piece = find_piece_type(value);
-          Serial.print("Piece information: ");
-          Serial.print(moved_piece);
-          Serial.print(chess_columns[c]);
-          Serial.println(chess_rows[r]);
-          print_matrix(FEN);
-        } 
-      }
-    }
-  }
-}
+//void piece_detection(){
+//  //Loop through and read all 8 values
+//  for(int r = 0; r < 8; r++){
+//    for(int c = 7; c > -1; c--){
+//      float curr_value = measure_voltage(r,c);
+//      
+//      if(abs(curr_value - prevValues[r][c] >= DELTA)){
+//        delay(2000);
+//        //STABILIZING LOGIC
+//          // float lastValue = -1;
+//          // int counter = 0;
+//          // bool found = false;
+//          // while(true){
+//          //   value = readMux(r,c);
+//          //   if(lastValue == -1 || lastValue == value)
+//          //     counter++;
+//          //     if(counter == 4){
+//          //       found = true;
+//          //       break;
+//          //     }
+//          //     lastValue = value;
+//          //   }
+//          //   break;
+//          // }
+//          
+//        float stab_val = measure_voltage(r,c);
+//        String moved_piece = find_piece_type(stab_val, r, c);
+//        if((prevValues[r][c] != stab_val) && (FEN[r][c] != moved_piece)){
+//          Serial.println("Change detected...");
+//          Serial.print("Value Before Checking = ");
+//          Serial.println(curr_value);
+//          Serial.print("Previous Value = ");
+//          Serial.println(prevValues[r][c]);
+//          Serial.print("Current value = ");
+//          Serial.println(stab_val);
+//          Serial.print("Previous Piece = ");
+//          Serial.println(FEN[r][c]);
+//          Serial.print("Current Piece (BC) = ");
+//          Serial.println(moved_piece);
+//          if(FEN[r][c] != "X" && moved_piece == "X"){
+//            moved_piece = FEN[r][c];
+//          }
+//          Serial.print("Current Piece = ");
+//          Serial.println(moved_piece);
+//          prevValues[r][c] = stab_val;
+//          FEN[r][c] = moved_piece;
+//          // String piece = find_piece_type(value, r, c);
+//          Serial.print("Piece information: ");
+//          Serial.print(moved_piece);
+//          Serial.print(chess_columns[c]);
+//          Serial.println(chess_rows[r]);
+//          print_matrix(FEN);
+//        } 
+//      }
+//    }
+//  }
+//}
 
 void setup() {
   //MUX Pins
@@ -381,19 +382,20 @@ void setup() {
 
   //Add voltage range for each unique piece 
   //TODO: MAKE THE VALUES THE DIFFERENCE INSTEAD? NOT SURE    
-  VOLTAGE_RANGES[0] = {"p", 2.16, 2.21};
-  VOLTAGE_RANGES[1] = {"P", 2.74, 2.77};
-  VOLTAGE_RANGES[2] = {"r", 1.96, 2.01};
-  VOLTAGE_RANGES[3] = {"R", 2.95, 3.01};
-  VOLTAGE_RANGES[4] = {"n", 1.84, 1.89};
-  VOLTAGE_RANGES[5] = {"N", 3.07, 3.12};
-  VOLTAGE_RANGES[6] = {"b", 1.69, 1.74};
-  VOLTAGE_RANGES[7] = {"B", 3.16, 3.28};
-  VOLTAGE_RANGES[8] = {"q", 1.63, 1.73};
-  VOLTAGE_RANGES[9] = {"Q", 3.33, 3.37};    
-  VOLTAGE_RANGES[10] = {"k", 1.55, 1.60};
-  VOLTAGE_RANGES[11] = {"K", 3.39, 3.44};
+  VOLTAGE_RANGES[0] = {"p", 2.13, 2.25};
+  VOLTAGE_RANGES[2] = {"r", 2.04, 2.12};
+  VOLTAGE_RANGES[4] = {"n", 1.82, 1.94};
+  VOLTAGE_RANGES[6] = {"b", 1.94, 2.04};
+  VOLTAGE_RANGES[8] = {"q", 1.74, 1.82};
+  VOLTAGE_RANGES[10] = {"k", 1.50, 1.65};
   
+  VOLTAGE_RANGES[1] = {"P", 2.70, 2.85};
+  VOLTAGE_RANGES[3] = {"R", 2.87, 3.02};
+  VOLTAGE_RANGES[5] = {"N", 3.02, 3.14};
+  VOLTAGE_RANGES[7] = {"B", 3.15, 3.27};
+  VOLTAGE_RANGES[9] = {"Q", 3.27, 3.39};    
+  VOLTAGE_RANGES[11] = {"K", 3.43, 3.53};
+ 
   for(int i = 0; i<8; i++){
     for(int k = 0;  k<8;k++){
       prevValues[i][k] = -1;
@@ -405,13 +407,13 @@ void setup() {
 
 void loop() {
   buffer = Serial.readStringUntil('\n'); //Sends 'Start Calibration' message over
-  //Serial.println(buffer);
+  Serial.println(buffer);
   if(buffer == "Start Calibration"){
     calibration_check();
     //calibration_done = true;
   }
   //TODO: ADD LOGIC TO WAIT FOR PIECES TO BE PLACED ON THE BOAR
-  if(buffer == "Begin Game" && calibration_done && !game_started){
+  if(buffer == "Begin Game" && (true || calibration_done) && !game_started){
     set_chess_board();
     game_started = true;
     Serial.println("Begin Game");

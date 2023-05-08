@@ -8,6 +8,8 @@ import argparse
 class CreateAction:
     def __init__(self, startCalibration: bool):
         self.isCalibrationDone = not startCalibration
+        self.hasWhiteKingMoved = False
+        self.hasBlackKingMoved = False
         self.reset()
         
     def reset(self):
@@ -29,41 +31,76 @@ class CreateAction:
 
     def isMoveDone(self):
         pieces = dict()
+        coordinates = set()
         for piece, coordinate in self.data:
+            #if coordinate == "e1" and (g1 or h1 or f1 or a1 or c1 or d1) (WHITE)
+            #if hasKingMoved == False and 
+            #KING MOVED LOGIC
+            #if coordinate == "e8" or "e1"
             if piece in pieces:
-                if (not self.isCastling) and ((piece == "K" and "R" in pieces or piece == "k" and "r" in pieces) or \
-                    (piece == "R" and "K" in pieces and piece == "r" and "k" in pieces)):
-                    # Castling
+                if((self.hasWhiteKingMoved == False and ((coordinate == "e1" and ("h1" in coordinates or "a1" in coordinates)) or ((coordinate == "a1" or coordinate == "h1") and ("e1" in coordinates)))) or
+                  (self.hasBlackKingMoved == False and((coordinate == "e8" and ("h8" in coordinates or "a8" in coordinates)) or(( coordinate == "a8" or coordinate == "h8") and ("e8" in coordinates))))) :
                     self.isCastling = True
-                elif (self.isCastling) and ((piece == "K" and "K" in pieces and pieces["K"][0] == 1 and "R" in pieces and pieces["R"][0] == 2) or \
-                      (piece == "k" and "k" in pieces and pieces["k"][0] == 1 and "r" in pieces and pieces["r"][0] == 2) or \
-                      (piece == "R" and "R" in pieces and pieces["R"][0] == 1 and "k" in pieces and pieces["k"][0] == 2) or \
-                      (piece == "r" and "r" in pieces and pieces["r"][0] == 1 and "k" in pieces and pieces["k"][0] == 2)):
-                    #castling complete
+                # if (not self.isCastling) and ((piece == "K" and "R" in pieces or piece == "k" and "r" in pieces) or \
+                    # (piece == "R" and "K" in pieces and piece == "r" and "k" in pieces)):
+                    # Castling
+                    # self.isCastling = True
+                elif((self.isCastling) and len(self.data) == 4):
+                    self.isCastling = False
+                    
                     self.actionType = "Castling"
-                    currPiece, currCoor = piece, pieces[piece][1]+coordinate
-                    pieces.pop(piece)
-                    resPiece, coorInfo = next(iter(pieces.items()))
-                    self.move = resPiece + coorInfo[-1]
-                    self.actionResult = currPiece + currCoor
+                    if("a1" in coordinates):
+                        self.move = "Pe1c1"
+                        self.hasWhiteKingMoved = True
+                    elif("a8" in coordinates):
+                        self.hasBlackKingMoved = True
+                        self.move = "pe8c8"
+                    elif("h8" in coordinates):
+                        self.move = "pe8g8"
+                        self.hasBlackKingMoved = True
+                    else:
+                        self.move = "Pe1g1"
+                        self.hasWhiteKingMoved = True
+                    #self.move = resPiece + coorInfo[-1]
+                    #self.actionResult = currPiece + currCoor
+                # elif (self.isCastling) and ((piece == "K" and "K" in pieces and pieces["K"][0] == 1 and "R" in pieces and pieces["R"][0] == 2) or \
+                      # (piece == "k" and "k" in pieces and pieces["k"][0] == 1 and "r" in pieces and pieces["r"][0] == 2) or \
+                      # (piece == "R" and "R" in pieces and pieces["R"][0] == 1 and "k" in pieces and pieces["k"][0] == 2) or \
+                      # (piece == "r" and "r" in pieces and pieces["r"][0] == 1 and "k" in pieces and pieces["k"][0] == 2)):
+                    # #castling complete
+                    # self.actionType = "Castling"
+                    # currPiece, currCoor = piece, pieces[piece][1]+coordinate
+                    # pieces.pop(piece)
+                    # resPiece, coorInfo = next(iter(pieces.items()))
+                    # self.move = resPiece + coorInfo[-1]
+                    # self.actionResult = currPiece + currCoor
                     break
-                elif(len(self.data) == 3):
+                elif(not self.isCastling and len(self.data) == 3):
                     self.actionType = "Capture"
                     self.move = piece + pieces.pop(piece)[1] + coordinate
                     resPiece, coor_info = next(iter(pieces.items()))
+                    if(self.move.startswith("Pe1")):
+                        self.hasWhiteKingMoved = True
+                    elif(self.move.startswith("pe8")):
+                        self.hasBlackKingMoved = True
                     self.actionResult = resPiece + coor_info[1]
                     break
-                elif(len(self.data) == 2):
+                elif(not self.isCastling and len(self.data) == 2):
                     self.actionType = "Move"
                     self.move = piece + pieces.pop(piece)[1] + coordinate
+                    if(self.move.startswith("Pe1")):
+                        self.hasWhiteKingMoved = True
+                    elif(self.move.startswith("pe8")):
+                        self.hasBlackKingMoved = True
                     self.actionResult = ''
                     break
                 
                 pieces[piece] = (pieces[piece][0] + 1, pieces[piece][1] + coordinate)
+                coordinates.add(coordinate)
             else: 
                 pieces[piece] = (1, coordinate)
-        
-        #print(pieces)
+                coordinates.add(coordinate)
+        # print(pieces, coordinates, self.isCastling)
         if(self.actionType != ''):
             return True
         else:
@@ -85,6 +122,7 @@ class Arduino:
         self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
         self.pieces = set({"P", "R", "N", "B", "Q", "K",
                            "p", "r", "n", "b", "q", "k"})
+         
 
     def establishSerialCommunication(self, startCalibration, beginGame):
         action = CreateAction(startCalibration)
@@ -97,6 +135,7 @@ class Arduino:
                     self.arduino.write("Start Calibration".encode('utf-8'))
                     time.sleep(2.5)
             if(beginGame):
+                beginGame = False
                 while self.arduino.in_waiting == 0:
                     self.arduino.write("Begin Game".encode('utf-8'))
                     time.sleep(2.5)
