@@ -17,12 +17,11 @@ class State:
     Keeps track of current turn, last move made, current board fen, and game stockfish
     '''
     def __init__(self, fen: str, move: str):
-        # self.turn = 1
         self.stockfish = Stockfish(path="/usr/games/stockfish")
         # print(type(chess.Board().fen()))
         self.stockfish.set_fen_position(fen)
         # TODO add updating to last move made
-        self.lastMove = ''
+        # self.lastMove = '' 
         self.move = move
         self.fen = fen
         self.piece = self.Find_Piece_From_GameState()
@@ -70,8 +69,6 @@ def Check_User_Move(gameState):
     move = gameState.move
     if gameState.stockfish.is_move_correct(move):
         return Make_Moves([move], gameState)
-        #print(gameState.stockfish.get_fen_position())
-        # return gameState.stockfish.get_fen_position()
     else:
         return -1
 
@@ -90,7 +87,7 @@ def AI_Make_Move(gameState: State):
 def Get_Move_From_Serial():
     #establish arduino connection
     arduino = serial.Serial(port='/dev/ttyACM0', baudrate=115200, timeout=.1)
-    time.sleep(0.1)
+    # time.sleep(0.1)
     if arduino.isOpen():
         while True:
             data = arduino.readline()
@@ -115,24 +112,19 @@ def Validate_State_Move(gameState: State):
     if (gameState.stockfish.is_fen_valid(gameState.fen)):     # while our board is still valid - no stalemates, no checkmates, etc.
         gameState.fen = Check_User_Move(gameState)
         return gameState.fen
-        # Pass_Move(gameState)
-        #return error code
     else:
-        # print("Not a valid FEN")
         return -1
-    #print(gameState.stockfish.get_board_visual()) 
     
 
 
 if __name__ == '__main__':
-    #TODO: Make the arguments required
     parser = argparse.ArgumentParser(description='Validate Board State and Move Made')
     parser.add_argument('-move', metavar='M', type=str, nargs='?', required=True,
                         help='A move made by the user/opponent')
     parser.add_argument('-fen', metavar='F', type=str, nargs='?', required=True,
                         help='Current FEN state of game')
     parser.add_argument('-update', metavar='U', type=bool, default=False, nargs='?',
-                        help='Just update the given FEN')
+                        help='Just update the given FEN based on Opponent\'s move')
 
     args = parser.parse_args()
     move = args.move
@@ -146,9 +138,6 @@ if __name__ == '__main__':
         result = str(Make_Moves([move], gameState))
     else:
         result = str(Validate_State_Move(gameState))
-
-    #if(result == "-1"):
-    #    gameState.fen = fen
             
     message = ""
     if(result == "-1"):
@@ -165,15 +154,3 @@ if __name__ == '__main__':
         print(gameState.piece + "$" + result + "$" + message)
     else:
         print(result)
-    
-    
-        # exit(0)
-    
-
-
-
-#if sys.argv[1] == 'Get_Move_From_User':
-#    Get_Move_From_User(sys.argv[2])
-
-
-#print(sys.argv[1])

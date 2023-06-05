@@ -3,7 +3,7 @@ const axios = require('axios')
 const {spawnSync, spawn} = require('child_process');
 const { create } = require('domain');
 const readline = require('readline');
-const Gpio = require('onoff').Gpio;
+// const Gpio = require('onoff').Gpio;
 
 
 
@@ -67,12 +67,12 @@ const makeMove = (gameId, move) => {
 
 //Estbalish GPIO pins and arduino communication
 
-const GPIO_PIN_START = 17;
-const GPIO_PIN_RESIGN = 16;
-const GPIO_PIN_CONFIRM = 27; //confirm button
-const gpio_start = new Gpio(GPIO_PIN_START, 'in', 'both')
-const gpio_resign = new Gpio(GPIO_PIN_RESIGN, 'in', 'both')
-const gpio_confirm = new Gpio(GPIO_PIN_CONFIRM, 'in', 'both')
+// const GPIO_PIN_START = 17;
+// const GPIO_PIN_RESIGN = 16;
+// const GPIO_PIN_CONFIRM = 27; //confirm button
+// const gpio_start = new Gpio(GPIO_PIN_START, 'in', 'both')
+// const gpio_resign = new Gpio(GPIO_PIN_RESIGN, 'in', 'both')
+// const gpio_confirm = new Gpio(GPIO_PIN_CONFIRM, 'in', 'both')
 
 global.gameId = null
 global.gameFEN = null
@@ -81,20 +81,22 @@ global.isCalibrationDone = false
 global.arduinoCommunication = null
 
 const listenForCalibration = (data) => {
-                    const dataJSONstrs = data.toString().trim().split('\n')
-                    const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-                    console.log("listenForCalibration dataJSON: ")
-                    console.log(dataJSON)
+                    // const dataJSONstrs = data.toString().trim().split('\n')
+                    // const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
+                    // console.log("listenForCalibration dataJSON: ")
+                    // console.log(dataJSON)
                     //console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
-                    if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false) {
+                    if ((true) || (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && global.gameId === null && global.isCalibrationDone === false)) {
                         console.log('Calibration is done')
                         global.action = "boardSetup"
                         global.isConfirmState = true
-                        global.minVoltage = dataJSON.actionResult.split(" ")[0]
-                        global.maxVoltage = dataJSON.actionResult.split(" ")[1]
+                        // global.minVoltage = dataJSON.actionResult.split(" ")[0]
+                        // global.maxVoltage = dataJSON.actionResult.split(" ")[1]
+                        global.minVoltage = 2.47
+                        global.maxVoltage = 2.51
                         global.isCalibrationDone = true
-                        global.arduinoCommunication.stdout.off('data', listenForCalibration)
+                        // global.arduinoCommunication.stdout.off('data', listenForCalibration)
                         global.message = "GAME_START:Please arrange the board to the starting position, and press the 'Confirm' button to begin game"
                         const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
 
@@ -105,15 +107,15 @@ const listenForCalibration = (data) => {
                 }
                 
 const listenForGameStart = (data) => {
-                    const dataJSONstrs = data.toString().trim().split('\n')
-                    const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
-                    console.log("listenForGameStart dataJSON: ")
-                    console.log(dataJSON) // this should be the information thats being received
+                    // const dataJSONstrs = data.toString().trim().split('\n')
+                    // const dataJSON = dataJSONstrs.reduce((acc, curr) => ({ ...acc, ...JSON.parse(curr) }), {});
+                    // console.log("listenForGameStart dataJSON: ")
+                    // console.log(dataJSON) // this should be the information thats being received
                     //TODO case on information and start game when a specific condition is met
-                    if (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && 
+                    if ((true) || (dataJSON.hasOwnProperty("isCalibrationDone") && dataJSON.isCalibrationDone === true && 
                         dataJSON.hasOwnProperty("actionType") && dataJSON.actionType === "Begin Game" &&
-                        global.gameId === null && global.isCalibrationDone === true) {
-                        global.arduinoCommunication.stdout.off('data', listenForGameStart)
+                        global.gameId === null && global.isCalibrationDone === true)) {
+                        // global.arduinoCommunication.stdout.off('data', listenForGameStart)
                         console.log('Game seek started')
                         createAISeek()
                     }
@@ -177,62 +179,70 @@ function main() {
     global.fixMove = ""
     global.moveFixed = false
     global.fixMessage = ""
+    global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
+    listenForCalibration()
+    if (global.arudinoCommunication !== null) {
+        global.arduinoCommunication.kill('SIGTERM')
+    }
+    global.arduinoCommunication = spawn('python3', ['serial_module.py', '-beginGame', 'True'])
+    listenForGameStart()
+
     
-    gpio_start.watch((err, value) => {
-        if (err) {
-            throw err;
-        }
-        if (value === 1 && global.gameId === null) {
-            // calibration mode which calls the audio module
-            // waits for confirm
-            // once confirm is pressed the arduino runs
-            if (global.arduinoCommunication !== null) {
-                global.isCalibrationDone = false;
-                global.arduinoCommunication.kill('SIGTERM');
-                global.arduinoCommunication = null
-            }
-            //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
-            //spawn audio instead to start calibration state
-            global.message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
-            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
-            global.isConfirmState = true
-            global.action = "calibrationStart"
-            console.log("start game button pressed")
-            //global.arduinoCommunication.stdout.on('data', listenForCalibration)
-        }
-    })
+    // gpio_start.watch((err, value) => {
+    //     if (err) {
+    //         throw err;
+    //     }
+    //     if (value === 1 && global.gameId === null) {
+    //         // calibration mode which calls the audio module
+    //         // waits for confirm
+    //         // once confirm is pressed the arduino runs
+    //         if (global.arduinoCommunication !== null) {
+    //             global.isCalibrationDone = false;
+    //             global.arduinoCommunication.kill('SIGTERM');
+    //             global.arduinoCommunication = null
+    //         }
+    //         //global.arduinoCommunication = spawn('python3', ['serial_module.py', '-startCalibration', 'True'])
+    //         //spawn audio instead to start calibration state
+    //         global.message = "CAL_CHECK:Please remove all the pieces from the board and press the 'Confirm' button, to start calibration"
+    //         const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
+    //         global.isConfirmState = true
+    //         global.action = "calibrationStart"
+    //         console.log("start game button pressed")
+    //         //global.arduinoCommunication.stdout.on('data', listenForCalibration)
+    //     }
+    // })
 
-    gpio_resign.watch((err, value) => {
-        if (err) {
-            throw err;
-        }
-        if (value === 1 && global.action == "resign") {
-            global.action = ""
-            global.isConfirmState = false
-            global.message = "MSG:You have cancelled the resign game action"
-            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
-        }
-        else if (value === 1 && global.gameId !== null) {
-            console.log('Game resigned')
-            // Once we resign game reset all values related to the game state
-            global.isConfirmState = true
-            global.message = "RES_GAME:You have pressed the resign button, please press the 'Confirm' button to resign game or press the 'Resign' button to cancel"
-            const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
-            global.action = "resign"
+    // gpio_resign.watch((err, value) => {
+    //     if (err) {
+    //         throw err;
+    //     }
+    //     if (value === 1 && global.action == "resign") {
+    //         global.action = ""
+    //         global.isConfirmState = false
+    //         global.message = "MSG:You have cancelled the resign game action"
+    //         const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
+    //     }
+    //     else if (value === 1 && global.gameId !== null) {
+    //         console.log('Game resigned')
+    //         // Once we resign game reset all values related to the game state
+    //         global.isConfirmState = true
+    //         global.message = "RES_GAME:You have pressed the resign button, please press the 'Confirm' button to resign game or press the 'Resign' button to cancel"
+    //         const audioModule = spawn('python3', ['audio_module.py', '-text', global.message]) // notify the user we're moving to calibration step and to hit confirm
+    //         global.action = "resign"
 
-            //Reseting game state values
-        }
-    })
+    //         //Reseting game state values
+    //     }
+    // })
 
-    gpio_confirm.watch((err, value) => {
-        if (err) {
-            throw err;
-        }
-        if (value === 1) {
-            console.log("in confirm button press")
-            confirmAction(global.action)
-        }
-    })
+    // gpio_confirm.watch((err, value) => {
+    //     if (err) {
+    //         throw err;
+    //     }
+    //     if (value === 1) {
+    //         console.log("in confirm button press")
+    //         confirmAction(global.action)
+    //     }
+    // })
 }
 
 if (require.main === module) {

@@ -119,30 +119,33 @@ class CreateAction:
 
 class Arduino:
     def __init__(self):
-        self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
+        # self.arduino = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
+        self.arduino = serial.Serial()
         self.pieces = set({"P", "R", "N", "B", "Q", "K",
                            "p", "r", "n", "b", "q", "k"})
          
 
     def establishSerialCommunication(self, startCalibration, beginGame):
         action = CreateAction(startCalibration)
+        # print("Entered")
         while True:
-            data_decoded = ""
-            if(startCalibration):
-                action.isCalibrationDone = False
-                # print(self.arduino.in_waiting)
-                while self.arduino.in_waiting == 0:
-                    self.arduino.write("Start Calibration".encode('utf-8'))
-                    time.sleep(2.5)
-            if(beginGame):
-                beginGame = False
-                while self.arduino.in_waiting == 0:
-                    self.arduino.write("Begin Game".encode('utf-8'))
-                    time.sleep(2.5)
-            if (self.arduino.in_waiting > 0):
-                data_decoded = self.arduino.readline().decode().rstrip()
-                #print(data_decoded)
-            #data_decoded = input("Enter info: ")
+            # data_decoded = ""
+            # if(startCalibration):
+            #     action.isCalibrationDone = False
+            #     # print(self.arduino.in_waiting)
+            #     while self.arduino.in_waiting == 0:
+            #         self.arduino.write("Start Calibration".encode('utf-8'))
+            #         time.sleep(2.5)
+            # if(beginGame):
+            #     beginGame = False
+            #     while self.arduino.in_waiting == 0:
+            #         self.arduino.write("Begin Game".encode('utf-8'))
+            #         time.sleep(2.5)
+            # if (self.arduino.in_waiting > 0):
+            #     data_decoded = self.arduino.readline().decode().rstrip()
+            #     #print(data_decoded)
+            # # data_decoded = input("Enter info: ")
+            data_decoded = input("Enter your move")
             if (data_decoded != "" and data_decoded.startswith('Calibration Complete')):
                 # print(data_decoded)
                 action.actionResult = data_decoded.split(":")[-1] # Send min and max voltage as a space divided string
@@ -219,7 +222,9 @@ if __name__ == '__main__':
     arduino = Arduino()
     time.sleep(0.1)
     sys.stdout.flush()
-    if arduino.arduino.isOpen():
-        #Get data and validate it
-        arduino.establishSerialCommunication(startCalibration, beginGame)
+    arduino.establishSerialCommunication(startCalibration, beginGame)
+
+    # if arduino.arduino.isOpen():
+    #     #Get data and validate it
+    #     arduino.establishSerialCommunication(startCalibration, beginGame)
         

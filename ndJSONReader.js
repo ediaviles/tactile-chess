@@ -177,7 +177,7 @@ const eventController = (data) => {
                             console.log(global.FEN)
                             global.opponentMove = lastMove
                             global.opponentPiece = dataString[0]
-                            global.makeOpponentMove = true
+                            global.makeOpponentMove = false
                             global.message = dataString[2]
                             const audioModule = spawn('python3', ['audio_module.py', '-text', global.message])
                             //console.log('Before getInfoFromArduino')
